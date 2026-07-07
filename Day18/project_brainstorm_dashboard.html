@@ -1,0 +1,109 @@
+<style>
+  :root{
+    --bg:#0f1115;--panel:#161a20;--panel-2:#1c212a;--border:#262c37;
+    --text:#e8eaed;--text-dim:#9aa4b2;--accent:#5b8cff;--accent-2:#7cf5c4;
+    --red:#ff5d5d;--orange:#ffb648;--green:#3ddc84;--purple:#b98bff;--radius:14px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(1200px 600px at 10% -10%, #1a2233 0%, var(--bg) 55%);color:var(--text);padding:24px;line-height:1.5;}
+  .wrap{max-width:1000px;margin:0 auto;}
+  header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:28px;}
+  header.top h1{font-size:26px;margin:0 0 6px 0;letter-spacing:-0.02em;}
+  header.top p{margin:0;color:var(--text-dim);font-size:14px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:999px;font-size:12px;color:var(--text-dim);}
+  section{margin-bottom:32px;}
+  .section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .section-head .num{font-size:12px;color:var(--text-dim);border:1px solid var(--border);border-radius:8px;padding:2px 8px;}
+  .section-head h2{font-size:18px;margin:0;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+  .grid{display:grid;gap:14px;}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+  @media (max-width:900px){.grid.cols-3{grid-template-columns:1fr;}.grid.cols-2{grid-template-columns:1fr;}}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:transform .15s ease, border-color .15s ease;}
+  .kpi:hover{transform:translateY(-2px);border-color:var(--accent);}
+  .kpi .label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
+  .kpi .value{font-size:20px;font-weight:600;margin-top:6px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{text-align:left;color:var(--text-dim);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1px solid var(--border);}
+  td{padding:12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:hover td{background:var(--panel-2);}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;}
+  .badge.pending{background:rgba(255,255,255,.06);color:var(--text-dim);}
+  .badge.question{background:rgba(91,140,255,.12);color:var(--accent);border-color:rgba(91,140,255,.3);}
+  .risk-card{border-left:3px solid var(--orange);background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+  .note-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;font-size:14px;color:var(--text-dim);}
+  footer{text-align:center;color:var(--text-dim);font-size:12px;margin-top:40px;padding-top:20px;border-top:1px solid var(--border);}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Project Brainstorm</h1>
+      <p>Structured breakdown — Full Breakdown Mode</p>
+    </div>
+    <div class="pill">📝 7 raw items</div>
+  </header>
+
+  <section>
+    <div class="section-head"><span class="num">01</span><h2>Summary</h2></div>
+    <div class="card">
+      <p>Brainstorm notes for a project involving building an AI chatbot with a payment gateway, targeting a September launch. A UI redesign is required and 2 frontend developers are needed. Marketing budget is pending, and client feedback is expected next week.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">02</span><h2>Key Takeaways</h2></div>
+    <div class="grid cols-3">
+      <div class="kpi"><div class="label">Target Launch</div><div class="value">September</div></div>
+      <div class="kpi"><div class="label">Core Build</div><div class="value">AI Chatbot + Payment Gateway</div></div>
+      <div class="kpi"><div class="label">Hiring Need</div><div class="value">2 Frontend Developers</div></div>
+      <div class="kpi"><div class="label">Design Status</div><div class="value">UI Redesign Required</div></div>
+      <div class="kpi"><div class="label">Marketing Budget</div><div class="value">Pending</div></div>
+      <div class="kpi"><div class="label">Feedback Checkpoint</div><div class="value">Client feedback next week</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">03</span><h2>Action Items</h2></div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Task</th><th>Owner</th><th>Deadline</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Build AI chatbot</td><td>Not specified</td><td>Not specified</td><td><span class="badge pending">⏳ Pending</span></td></tr>
+          <tr><td>Add payment gateway</td><td>Not specified</td><td>Not specified</td><td><span class="badge pending">⏳ Pending</span></td></tr>
+          <tr><td>Launch project</td><td>Not specified</td><td>September</td><td><span class="badge pending">⏳ Pending</span></td></tr>
+          <tr><td>UI redesign</td><td>Not specified</td><td>Not specified</td><td><span class="badge pending">⏳ Pending</span></td></tr>
+          <tr><td>Hire 2 frontend developers</td><td>Not specified</td><td>Not specified</td><td><span class="badge pending">⏳ Pending</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">04</span><h2>Open Questions</h2></div>
+    <div class="grid cols-2">
+      <div class="card"><span class="badge question">❓ Open Question</span><p style="margin-top:10px;">What is the marketing budget amount / when will it be finalized?</p></div>
+      <div class="card"><span class="badge question">❓ Open Question</span><p style="margin-top:10px;">What will the client's feedback (expected next week) mean for scope or direction?</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">05</span><h2>Risks / Blockers</h2></div>
+    <div class="risk-card"><p style="margin:0;">Marketing budget is pending — could affect launch readiness or campaign timing. No priority level stated in source.</p></div>
+    <div class="risk-card"><p style="margin:0;">Hiring 2 frontend developers is not yet done — could be a dependency for the UI redesign and September launch timeline. No priority level stated in source.</p></div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">06</span><h2>Conflicts</h2></div>
+    <div class="note-card">No conflicting information identified in this source.</div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="num">07</span><h2>Additional Notes</h2></div>
+    <div class="note-card">Client feedback is expected next week — no further detail on format or topic given.</div>
+  </section>
+
+  <footer>Generated from provided notes only — no information was inferred or invented beyond what was explicitly written.</footer>
+</div>
