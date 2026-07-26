@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🧩 Prompt Puzzle — Master AI Prompting Through Play</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --bg1:#0f0c29; --bg2:#302b63; --bg3:#24243e;
+    --accent:#7c3aed; --accent2:#22d3ee; --gold:#fbbf24;
+    --good:#22c55e; --bad:#ef4444; --card:#161327cc;
+    --txt:#f1f5f9; --txt-dim:#94a3b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI',system-ui,sans-serif; color:var(--txt);
+    background:linear-gradient(135deg,var(--bg1),var(--bg2) 50%,var(--bg3));
+    background-size:400% 400%; animation:gradientMove 18s ease infinite;
+    min-height:100vh;
+  }
+  @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px;}
+  header{text-align:center;margin-bottom:20px;}
+  h1{font-size:2rem;margin:0;background:linear-gradient(90deg,var(--accent2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .sub{color:var(--txt-dim);font-size:.95rem;margin-top:6px;}
+  .card{background:var(--card);border:1px solid #ffffff14;border-radius:18px;padding:22px;margin-bottom:18px;backdrop-filter:blur(10px);box-shadow:0 8px 32px #0006;}
+  .btn{
+    cursor:pointer;border:none;border-radius:12px;padding:12px 22px;font-weight:600;font-size:.95rem;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;transition:.2s all;
+    box-shadow:0 4px 14px #7c3aed55;
+  }
+  .btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 22px #7c3aed88;}
+  .btn.secondary{background:#ffffff14;box-shadow:none;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .center{text-align:center;}
+  .badge{display:inline-block;padding:4px 12px;border-radius:20px;background:#ffffff12;font-size:.8rem;margin:2px;color:var(--txt-dim);}
+  .statbar{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+  .stat{background:#ffffff0d;border-radius:12px;padding:10px 16px;min-width:90px;text-align:center;border:1px solid #ffffff10;}
+  .stat .val{font-size:1.3rem;font-weight:700;color:var(--accent2);}
+  .stat .lab{font-size:.7rem;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.5px;}
+  .scenario-title{font-size:1.2rem;font-weight:700;margin-bottom:6px;}
+  .desired-output{background:#0c0a1a;border-left:3px solid var(--gold);padding:12px 16px;border-radius:8px;margin:10px 0;font-size:.92rem;color:#e2e8f0;}
+  .blocks-area{min-height:70px;border:2px dashed #ffffff30;border-radius:14px;padding:12px;display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;transition:.2s;}
+  .blocks-area.dragover{border-color:var(--accent2);background:#22d3ee11;}
+  .block{
+    background:linear-gradient(135deg,#2d2a4e,#1e1b3a);border:1px solid #ffffff22;border-radius:10px;
+    padding:10px 14px;cursor:grab;font-size:.88rem;user-select:none;transition:.2s;box-shadow:0 3px 10px #0004;
+  }
+  .block:hover{transform:translateY(-2px);border-color:var(--accent2);}
+  .block.correct{border-color:var(--good);box-shadow:0 0 12px #22c55e66;}
+  .block.wrong{border-color:var(--bad);box-shadow:0 0 12px #ef444466;animation:shake .3s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .pool-label,.target-label{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--txt-dim);margin-bottom:4px;}
+  .choice-card{background:#ffffff08;border:2px solid #ffffff18;border-radius:14px;padding:16px;margin:10px 0;cursor:pointer;transition:.2s;}
+  .choice-card:hover{border-color:var(--accent2);transform:translateY(-2px);}
+  .choice-card.selected.correct{border-color:var(--good);background:#22c55e18;}
+  .choice-card.selected.wrong{border-color:var(--bad);background:#ef444418;}
+  .choice-label{font-weight:700;color:var(--gold);margin-bottom:4px;}
+  .prompt-text{font-family:'Consolas',monospace;font-size:.85rem;color:#dbeafe;white-space:pre-wrap;}
+  .toast{
+    position:fixed;top:20px;right:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;padding:14px 20px;border-radius:12px;font-weight:600;box-shadow:0 8px 24px #0007;
+    z-index:999;animation:toastIn .4s ease, toastOut .4s ease 2.6s forwards;
+  }
+  @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes toastOut{to{transform:translateX(120%);opacity:0}}
+  .progressbar{height:8px;background:#ffffff14;border-radius:6px;overflow:hidden;margin:8px 0;}
+  .progressfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s;}
+  .tab-buttons{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .tab-btn{padding:8px 16px;border-radius:10px;background:#ffffff0d;border:1px solid #ffffff18;color:var(--txt-dim);cursor:pointer;font-size:.85rem;}
+  .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;}
+  .dna-bar{display:flex;height:26px;border-radius:8px;overflow:hidden;margin:10px 0;}
+  .dna-seg{display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#0009;}
+  .final-prompt{background:#0c0a1a;border:1px solid var(--gold);border-radius:12px;padding:16px;font-family:monospace;font-size:.85rem;white-space:pre-wrap;color:#fef3c7;}
+  .rank{font-size:2.4rem;font-weight:900;background:linear-gradient(90deg,var(--gold),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hint-box{background:#fbbf2418;border:1px solid var(--gold);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:.85rem;}
+  ::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:#ffffff22;border-radius:4px;}
+  .fade-in{animation:fadeIn .4s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧩 Prompt Puzzle</h1>
+    <div class="sub">Master AI Prompting Through Play — Domain: <b id="domainLabel"></b> | Difficulty: <b id="diffLabel"></b></div>
+  </header>
+
+  <div id="statbarWrap" class="statbar"></div>
+  <div id="progressWrap" class="card" style="padding:10px 22px;">
+    <div class="row" style="justify-content:space-between;">
+      <span id="progressText" style="font-size:.85rem;color:var(--txt-dim);"></span>
+      <span id="typeBadge" class="badge"></span>
+    </div>
+    <div class="progressbar"><div class="progressfill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div id="app"></div>
+  <div id="toasts"></div>
+</div>
+
+<script>
+/* ============================= DATA ============================= */
+const DOMAIN = "Education/Tutoring";
+const DIFFICULTY = "Intermediate";
+document.getElementById('domainLabel').textContent = DOMAIN;
+document.getElementById('diffLabel').textContent = DIFFICULTY;
+
+// Reusable scenario objects for Education/Tutoring — Intermediate
+const SCENARIOS = [
+{
+  id:1,
+  title:"Explaining Photosynthesis to a 10-Year-Old",
+  desiredOutput:"A simple, friendly explanation of photosynthesis using an analogy a 10-year-old can understand, under 100 words, with one follow-up question to check understanding.",
+  correctBlocks:[
+    "You are a friendly science tutor for children.",
+    "Explain photosynthesis using a simple analogy (like cooking or eating).",
+    "Keep the explanation under 100 words.",
+    "Use vocabulary suitable for a 10-year-old.",
+    "End with one simple question to check understanding."
+  ],
+  distractorBlocks:[
+    "Include the full chemical equation with molar masses.",
+    "Write a 1500-word academic essay.",
+    "Assume the reader has a PhD in biology.",
+    "Use complex jargon to sound authoritative."
+  ],
+  weakPrompt:"Explain photosynthesis.",
+  optimizedPrompt:"You are a friendly science tutor for children. Explain photosynthesis to a 10-year-old using a simple analogy like cooking food using sunlight. Keep it under 100 words, use simple vocabulary, and end with one question to check their understanding.",
+  overEngineeredPrompt:"You are a world-renowned botanist tutor with 40 years of experience. Provide an exhaustive, multi-section explanation of photosynthesis including the light-dependent and light-independent reactions, the Calvin cycle, chlorophyll absorption spectra, ATP synthase mechanisms, ecological implications across biomes, and historical discovery timeline, formatted with headers, subheaders, footnotes, and a bibliography in APA format, while also making it accessible to a 10-year-old.",
+  weakOutput:"Photosynthesis is the process by which plants convert light energy into chemical energy, using carbon dioxide and water to produce glucose and oxygen through a series of reactions in the chloroplast including the light-dependent and Calvin cycle stages.",
+  optimizedOutput:"Plants are like little chefs! They use sunlight as their stove, water from the ground, and air to cook up their own food (sugar) inside their leaves. As a bonus, they release oxygen for us to breathe! 🌱 Can you guess what ingredient plants get from the soil?",
+  principle:"Audience-aware prompting: specifying the reader's age and desired tone dramatically changes output quality and usefulness — always define WHO the output is for."
+},
+{
+  id:2,
+  title:"Creating a Practice Quiz on Fractions",
+  desiredOutput:"5 multiple-choice questions on adding fractions with unlike denominators, for a 6th-grade level, with an answer key at the end.",
+  correctBlocks:[
+    "You are a middle-school math teacher.",
+    "Create 5 multiple-choice questions about adding fractions with unlike denominators.",
+    "Target difficulty: 6th-grade level.",
+    "Provide 4 answer options (A-D) per question.",
+    "Include an answer key at the end."
+  ],
+  distractorBlocks:[
+    "Include calculus-level fraction problems.",
+    "Make all questions true/false only.",
+    "Do not provide any answer key.",
+    "Write the quiz in a foreign language."
+  ],
+  weakPrompt:"Make a fractions quiz.",
+  optimizedPrompt:"You are a middle-school math teacher. Create a 5-question multiple-choice quiz on adding fractions with unlike denominators, appropriate for 6th-grade students. Give 4 answer options (A-D) per question and include an answer key at the end.",
+  overEngineeredPrompt:"You are an internationally certified mathematics pedagogy expert with a doctorate in curriculum design. Construct an exhaustive assessment battery of 47 multi-tiered questions spanning fractions, decimals, ratios, ANOVA-adjusted difficulty curves, Bloom's taxonomy tagging for every item, rubric-based partial credit scoring formulas, statistical item-discrimination analysis, and a full psychometric validity report, targeted vaguely at 'students'.",
+  weakOutput:"1. What is 1/2 + 1/3? 2. What is 2/5 + 1/4? (no options, no answer key, unclear difficulty level)",
+  optimizedOutput:"1. 1/2 + 1/3 = ? A) 2/5 B) 5/6 C) 3/5 D) 1/6\n2. 2/3 + 1/4 = ? A) 11/12 B) 3/7 C) 1/2 D) 3/12\n... (5 total)\nAnswer Key: 1-B, 2-A, 3-C, 4-D, 5-B",
+  principle:"Structural specification: defining format (multiple-choice, number of options, answer key) ensures the output is immediately usable, not just conceptually correct."
+},
+{
+  id:3,
+  title:"Summarizing a History Chapter for Revision",
+  desiredOutput:"A bullet-point summary of the causes of World War I, limited to 6 key points, for high school exam revision.",
+  correctBlocks:[
+    "You are a history tutor helping a student revise for an exam.",
+    "Summarize the main causes of World War I.",
+    "Present the summary as exactly 6 bullet points.",
+    "Keep each bullet point to one sentence.",
+    "Write at a high-school comprehension level."
+  ],
+  distractorBlocks:[
+    "Include a 3000-word narrative essay instead of bullets.",
+    "Focus only on naval battles, ignore causes.",
+    "Use graduate-level historiography debates.",
+    "Randomize the order with no structure."
+  ],
+  weakPrompt:"Summarize WW1 causes.",
+  optimizedPrompt:"You are a history tutor helping a student revise for an exam. Summarize the main causes of World War I in exactly 6 bullet points, one sentence each, written at a high-school comprehension level.",
+  overEngineeredPrompt:"You are a distinguished professor of 20th-century geopolitical history. Provide an exhaustive 15-page critical historiographical analysis of the causes of World War I incorporating primary source citations, competing historian schools of thought (Fischer thesis vs. traditionalist views), footnoted references in Chicago style, and cross-referenced timelines, intended for a high school student's quick revision.",
+  weakOutput:"World War I was caused by militarism, alliances, imperialism, and nationalism, plus the assassination of Archduke Franz Ferdinand which triggered a chain of events across Europe involving multiple treaties and diplomatic failures.",
+  optimizedOutput:"• Militarism: European powers built up large armies and navies.\n• Alliances: Countries were bound by treaties to defend each other.\n• Imperialism: Competition for colonies increased tensions.\n• Nationalism: Ethnic pride fueled conflicts, especially in the Balkans.\n• Assassination: Archduke Franz Ferdinand's murder sparked the crisis.\n• Mobilization: Rapid military mobilizations escalated the conflict.",
+  principle:"Format constraints (exact count, one sentence each) turn vague requests into scannable, exam-ready study material."
+},
+{
+  id:4,
+  title:"Generating Step-by-Step Math Solutions",
+  desiredOutput:"A step-by-step solution to solving a linear equation (2x + 5 = 15), showing each algebraic step and the final answer, for a student learning algebra.",
+  correctBlocks:[
+    "You are a patient algebra tutor.",
+    "Solve the equation 2x + 5 = 15 step by step.",
+    "Show the algebraic operation performed at each step.",
+    "State the final value of x clearly at the end.",
+    "Use encouraging, simple language suitable for a beginner."
+  ],
+  distractorBlocks:[
+    "Skip directly to the final answer with no steps.",
+    "Solve a completely different, unrelated equation.",
+    "Use intimidating technical jargon.",
+    "Provide the answer in a language other than English without translation."
+  ],
+  weakPrompt:"Solve 2x+5=15.",
+  optimizedPrompt:"You are a patient algebra tutor. Solve the equation 2x + 5 = 15 step by step, showing the operation performed at each step, and clearly state the final value of x. Use simple, encouraging language suitable for a beginner.",
+  overEngineeredPrompt:"You are a tenured mathematics professor specializing in abstract algebra and Galois theory. Provide a rigorous proof-based derivation of the solution to 2x + 5 = 15 referencing field axioms, group-theoretic justifications for each algebraic manipulation, and a formal epsilon-delta style verification of uniqueness, intended for a beginner student.",
+  weakOutput:"x = 5",
+  optimizedOutput:"Let's solve it together!\nStep 1: Start with 2x + 5 = 15\nStep 2: Subtract 5 from both sides → 2x = 10\nStep 3: Divide both sides by 2 → x = 5\nGreat job! The answer is x = 5. 🎉",
+  principle:"Process-revealing prompts ('show step by step') produce educational scaffolding instead of just an answer — key for tutoring contexts."
+},
+{
+  id:5,
+  title:"Designing a Vocabulary Lesson Activity",
+  desiredOutput:"A short interactive activity to teach 5 new English vocabulary words to intermediate ESL learners, including definitions and one example sentence each.",
+  correctBlocks:[
+    "You are an ESL (English as a Second Language) teacher.",
+    "Create a vocabulary activity teaching 5 new words.",
+    "Target audience: intermediate-level ESL learners.",
+    "For each word, give a simple definition and one example sentence.",
+    "Keep the language accessible, avoiding idioms."
+  ],
+  distractorBlocks:[
+    "Use only advanced literary vocabulary from Shakespeare.",
+    "Explain definitions using more difficult words.",
+    "Include heavy use of idioms and slang.",
+    "Target native English professors instead of learners."
+  ],
+  weakPrompt:"Teach some vocabulary words.",
+  optimizedPrompt:"You are an ESL teacher. Create a vocabulary activity teaching 5 new words to intermediate-level ESL learners. For each word, provide a simple definition and one example sentence, avoiding idioms and difficult language.",
+  overEngineeredPrompt:"You are a distinguished linguist with expertise in etymological semantics. Design an exhaustive 20-word vocabulary curriculum tracing Latin and Greek roots, historical semantic drift, IPA phonetic transcriptions, corpus-frequency statistics, and register-based usage notes for each term, intended for 'ESL learners' without specifying their level.",
+  weakOutput:"1. Ubiquitous 2. Ephemeral 3. Cacophony 4. Serendipity 5. Perfunctory (no definitions or examples given)",
+  optimizedOutput:"1. Happy — feeling good. \"She felt happy after the exam.\"\n2. Busy — having a lot to do. \"He is busy at work today.\"\n3. Tired — needing rest. \"I am tired after running.\"\n4. Friendly — kind and nice. \"My neighbor is very friendly.\"\n5. Excited — feeling eager. \"They are excited for the trip.\"",
+  principle:"Defining proficiency level (intermediate ESL) prevents mismatched difficulty — a common failure mode when audience level is left implicit."
+},
+{
+  id:6,
+  title:"Giving Constructive Feedback on an Essay",
+  desiredOutput:"Constructive feedback on a student's essay draft, highlighting 2 strengths and 2 areas for improvement, written encouragingly.",
+  correctBlocks:[
+    "You are a supportive writing tutor.",
+    "Review the student's essay draft.",
+    "Identify exactly 2 strengths in the writing.",
+    "Identify exactly 2 specific areas for improvement.",
+    "Write the feedback in an encouraging, constructive tone."
+  ],
+  distractorBlocks:[
+    "List only criticisms, no strengths.",
+    "Rewrite the entire essay yourself instead of giving feedback.",
+    "Use harsh, discouraging language.",
+    "Give feedback on grammar rules unrelated to the essay."
+  ],
+  weakPrompt:"Give feedback on this essay.",
+  optimizedPrompt:"You are a supportive writing tutor. Review the student's essay draft and provide feedback: identify exactly 2 strengths and 2 specific areas for improvement. Write in an encouraging, constructive tone.",
+  overEngineeredPrompt:"You are a Pulitzer-prize winning literary critic and rhetoric professor. Conduct an exhaustive New Criticism-style close reading of the student's essay, analyzing syntactic complexity metrics, rhetorical device taxonomy, Flesch-Kincaid readability scores, comparative analysis against canonical essayists, and a 10-point rubric with weighted numerical scoring, presented in a tone appropriate for a beginner student.",
+  weakOutput:"Your essay has some grammar mistakes and the structure is weak. You should fix these issues.",
+  optimizedOutput:"Great start! I really liked how you used a personal story to open the essay, and your vocabulary choices are strong. 👍\nTwo things to work on: 1) Try adding a clearer thesis statement in your intro. 2) Some paragraphs could use better transitions between ideas. Keep it up — you're improving!",
+  principle:"Balanced, bounded feedback prompts (exact counts of strengths/improvements + tone) prevent overly harsh or vague critique — crucial in educational settings."
+}
+];
+
+/* ============================= STATE ============================= */
+let state = {
+  idx:0,
+  score:0,
+  accuracy:100,
+  moves:0,
+  wrong:0,
+  hints:0,
+  startTime:Date.now(),
+  totalTime:0,
+  challengeTypes:[], // assigned per scenario
+  results:[] // per scenario result records
+};
+
+const CHALLENGE_TYPES = ["Build the Prompt","Clean the Prompt","Choose the Best Prompt"];
+
+function assignChallengeTypes(){
+  // distribute challenge types evenly & shuffled
+  let types = [];
+  for(let i=0;i<SCENARIOS.length;i++){
+    types.push(CHALLENGE_TYPES[i % CHALLENGE_TYPES.length]);
+  }
+  // shuffle
+  for(let i=types.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [types[i],types[j]]=[types[j],types[i]];
+  }
+  return types;
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+state.challengeTypes = assignChallengeTypes();
+
+/* ============================= UI HELPERS ============================= */
+function toast(msg, type="info"){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  if(type==="bad") el.style.background = "linear-gradient(135deg,#ef4444,#f87171)";
+  if(type==="good") el.style.background = "linear-gradient(135deg,#22c55e,#4ade80)";
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(), 3200);
+}
+
+function renderStatbar(){
+  const elapsed = Math.floor((Date.now()-state.startTime)/1000);
+  const stats = [
+    {lab:"Score", val:Math.max(0,Math.round(state.score))},
+    {lab:"Accuracy", val:Math.max(0,Math.round(state.accuracy))+"%"},
+    {lab:"Moves", val:state.moves},
+    {lab:"Wrong", val:state.wrong},
+    {lab:"Hints", val:state.hints},
+    {lab:"Time", val: elapsed+"s"}
+  ];
+  document.getElementById('statbarWrap').innerHTML = stats.map(s=>
+    `<div class="stat"><div class="val">${s.val}</div><div class="lab">${s.lab}</div></div>`
+  ).join('');
+}
+setInterval(renderStatbar, 1000);
+
+function renderProgress(){
+  const total = SCENARIOS.length;
+  document.getElementById('progressText').textContent = `Scenario ${Math.min(state.idx+1,total)} of ${total}`;
+  document.getElementById('progressFill').style.width = `${(state.idx/total)*100}%`;
+  document.getElementById('typeBadge').textContent = state.challengeTypes[state.idx] || "";
+}
+
+/* ============================= SCENARIO RENDERING ============================= */
+const app = document.getElementById('app');
+
+function startScenario(){
+  if(state.idx >= SCENARIOS.length){
+    renderReport();
+    return;
+  }
+  renderProgress();
+  const sc = SCENARIOS[state.idx];
+  const type = state.challengeTypes[state.idx];
+  sc._hintUsed = false;
+  sc._startTime = Date.now();
+
+  if(type === "Build the Prompt") renderBuildThePrompt(sc);
+  else if(type === "Clean the Prompt") renderCleanThePrompt(sc);
+  else renderChooseTheBest(sc);
+}
+
+/* ---------- CHALLENGE 1: Build the Prompt ---------- */
+function renderBuildThePrompt(sc){
+  const allBlocks = shuffle([...sc.correctBlocks, ...sc.distractorBlocks]);
+  app.innerHTML = `
+  <div class="card fade-in">
+    <div class="scenario-title">🧱 Build the Prompt — ${sc.title}</div>
+    <div class="desired-output"><b>🎯 Desired Output:</b><br>${sc.desiredOutput}</div>
+    <div class="pool-label">Available Blocks (drag into the Prompt Zone below)</div>
+    <div class="blocks-area" id="poolArea"></div>
+    <div class="target-label">Your Prompt (drop blocks here in order)</div>
+    <div class="blocks-area" id="targetArea"></div>
+    <div class="row" style="margin-top:14px;justify-content:space-between;">
+      <button class="btn secondary" id="hintBtn">💡 Hint (-5 pts)</button>
+      <button class="btn" id="submitBtn">Submit Prompt ✅</button>
+    </div>
+    <div id="hintBox"></div>
+  </div>`;
+
+  const pool = document.getElementById('poolArea');
+  const target = document.getElementById('targetArea');
+
+  allBlocks.forEach((text,i)=>{
+    const b = document.createElement('div');
+    b.className='block'; b.draggable=true; b.textContent=text;
+    b.dataset.correct = sc.correctBlocks.includes(text) ? "1":"0";
+    b.id = 'blk_'+i;
+    b.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', b.id); });
+    pool.appendChild(b);
+  });
+
+  [pool,target].forEach(zone=>{
+    zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e=>{
+      e.preventDefault(); zone.classList.remove('dragover');
+      const id = e.dataTransfer.getData('text/plain');
+      const el = document.getElementById(id);
+      if(el){ zone.appendChild(el); state.moves++; }
+    });
+  });
+
+  document.getElementById('hintBtn').addEventListener('click', ()=>{
+    if(sc._hintUsed) return;
+    sc._hintUsed = true;
+    state.hints++;
+    document.getElementById('hintBox').innerHTML = `<div class="hint-box">💡 <b>Hint:</b> ${sc.principle}</div>`;
+  });
+
+  document.getElementById('submitBtn').addEventListener('click', ()=>{
+    const placed = Array.from(target.children);
+    let correctCount=0, wrongCount=0;
+    placed.forEach(el=>{
+      if(el.dataset.correct==="1"){ el.classList.add('correct'); correctCount++; }
+      else { el.classList.add('wrong'); wrongCount++; }
+    });
+    const missed = sc.correctBlocks.length - correctCount;
+    state.wrong += wrongCount;
+    const accuracyThis = Math.max(0, Math.round(100*(correctCount/(sc.correctBlocks.length))-(wrongCount*10)));
+    finishScenario(sc, accuracyThis, wrongCount, missed>0);
+  });
+}
+
+/* ---------- CHALLENGE 2: Clean the Prompt ---------- */
+function renderCleanThePrompt(sc){
+  // Present over-engineered prompt broken into clauses; user selects which to KEEP
+  const overClauses = sc.overEngineeredPrompt.split(/(?<=[.,])\s+/).filter(x=>x.trim().length>0);
+  const correctClauseHints = sc.correctBlocks;
+  // We'll build blocks from overClauses, and mark "keep-worthy" ones as those semantically similar to core parts
+  // Simplify: treat first & last few meaningful clauses referencing audience/format as "keep", rest as "remove"
+  const items = overClauses.map((text,i)=>{
+    const lower = text.toLowerCase();
+    const isEssential = correctClauseHints.some(cb=>{
+      const cbWords = cb.toLowerCase().split(' ').filter(w=>w.length>4);
+      return cbWords.some(w=>lower.includes(w));
+    });
+    return {text, keep: isEssential};
+  });
+
+  app.innerHTML = `
+  <div class="card fade-in">
+    <div class="scenario-title">🧹 Clean the Prompt — ${sc.title}</div>
+    <div class="desired-output"><b>🎯 Desired Output:</b><br>${sc.desiredOutput}</div>
+    <div class="badge">This prompt is over-engineered! Click the phrases that should be REMOVED (bloat / irrelevant).</div>
+    <div class="blocks-area" id="cleanArea" style="margin-top:12px;"></div>
+    <div class="row" style="margin-top:14px;justify-content:space-between;">
+      <button class="btn secondary" id="hintBtn2">💡 Hint (-5 pts)</button>
+      <button class="btn" id="submitBtn2">Submit Cleanup ✅</button>
+    </div>
+    <div id="hintBox2"></div>
+  </div>`;
+
+  const area = document.getElementById('cleanArea');
+  items.forEach((it,i)=>{
+    const b = document.createElement('div');
+    b.className='block';
+    b.textContent = it.text;
+    b.dataset.keep = it.keep ? "1":"0";
+    b.dataset.selected = "0";
+    b.addEventListener('click', ()=>{
+      b.dataset.selected = b.dataset.selected==="1" ? "0":"1";
+      b.style.opacity = b.dataset.selected==="1" ? "0.4":"1";
+      b.style.textDecoration = b.dataset.selected==="1" ? "line-through":"none";
+      state.moves++;
+    });
+    area.appendChild(b);
+  });
+
+  document.getElementById('hintBtn2').addEventListener('click', ()=>{
+    if(sc._hintUsed) return;
+    sc._hintUsed = true;
+    state.hints++;
+    document.getElementById('hintBox2').innerHTML = `<div class="hint-box">💡 <b>Hint:</b> ${sc.principle}</div>`;
+  });
+
+  document.getElementById('submitBtn2').addEventListener('click', ()=>{
+    let correctCount=0, wrongCount=0, total=items.length;
+    Array.from(area.children).forEach(el=>{
+      const selected = el.dataset.selected==="1";
+      const shouldRemove = el.dataset.keep==="0";
+      if(selected===shouldRemove){ el.classList.add('correct'); correctCount++; }
+      else { el.classList.add('wrong'); wrongCount++; }
+    });
+    state.wrong += wrongCount;
+    const accuracyThis = Math.max(0, Math.round(100*(correctCount/total)));
+    finishScenario(sc, accuracyThis, wrongCount, false);
+  });
+}
+
+/* ---------- CHALLENGE 3: Choose the Best Prompt ---------- */
+function renderChooseTheBest(sc){
+  const options = shuffle([
+    {label:"A", text:sc.weakPrompt, quality:"weak"},
+    {label:"B", text:sc.optimizedPrompt, quality:"optimized"},
+    {label:"C", text:sc.overEngineeredPrompt, quality:"over"}
+  ]);
+
+  app.innerHTML = `
+  <div class="card fade-in">
+    <div class="scenario-title">⚖️ Choose the Best Prompt — ${sc.title}</div>
+    <div class="desired-output"><b>🎯 Desired Output:</b><br>${sc.desiredOutput}</div>
+    <div id="choicesArea"></div>
+    <div class="row" style="margin-top:14px;justify-content:space-between;">
+      <button class="btn secondary" id="hintBtn3">💡 Hint (-5 pts)</button>
+    </div>
+    <div id="hintBox3"></div>
+  </div>`;
+
+  const area = document.getElementById('choicesArea');
+  options.forEach(opt=>{
+    const div = document.createElement('div');
+    div.className = 'choice-card';
+    div.innerHTML = `<div class="choice-label">Option ${opt.label}</div><div class="prompt-text">${opt.text}</div>`;
+    div.addEventListener('click', ()=>{
+      if(div.dataset.locked) return;
+      Array.from(area.children).forEach(c=>c.dataset.locked="1");
+      state.moves++;
+      const isCorrect = opt.quality==="optimized";
+      div.classList.add('selected', isCorrect?'correct':'wrong');
+      if(!isCorrect) state.wrong++;
+      const accuracyThis = isCorrect ? 100 : 0;
+      setTimeout(()=> finishScenario(sc, accuracyThis, isCorrect?0:1, false), 700);
+    });
+    area.appendChild(div);
+  });
+
+  document.getElementById('hintBtn3').addEventListener('click', ()=>{
+    if(sc._hintUsed) return;
+    sc._hintUsed = true;
+    state.hints++;
+    document.getElementById('hintBox3').innerHTML = `<div class="hint-box">💡 <b>Hint:</b> ${sc.principle}</div>`;
+  });
+}
+
+/* ============================= SCORING ============================= */
+function finishScenario(sc, accuracyThis, wrongThis, missedAny){
+  const timeTaken = (Date.now()-sc._startTime)/1000;
+  const hintPenalty = sc._hintUsed ? 5 : 0;
+  const speedBonus = Math.max(0, 20 - Math.floor(timeTaken/3));
+  const optimizationBonus = (accuracyThis>=90 && !sc._hintUsed) ? 15 : 0;
+  const baseScore = Math.round(accuracyThis*0.8);
+  const scenarioScore = Math.max(0, baseScore + speedBonus + optimizationBonus - hintPenalty - (wrongThis*3));
+
+  state.score += scenarioScore;
+  state.accuracy = Math.round(((state.accuracy*(state.idx)) + accuracyThis)/(state.idx+1));
+
+  state.results.push({
+    title: sc.title,
+    type: state.challengeTypes[state.idx],
+    accuracy: accuracyThis,
+    scenarioScore,
+    hintUsed: sc._hintUsed,
+    optimizedPrompt: sc.optimizedPrompt,
+    optimizedOutput: sc.optimizedOutput,
+    weakOutput: sc.weakOutput,
+    principle: sc.principle
+  });
+
+  toast(`✅ Scenario complete! +${scenarioScore} pts`, accuracyThis>=70?"good":"bad");
+
+  setTimeout(()=>{
+    state.idx++;
+    startScenario();
+  }, 1400);
+}
+
+/* ============================= FINAL REPORT ============================= */
+function computeRank(score){
+  if(score >= 480) return {rank:"🏆 Prompt Grandmaster", rating:"Exceptional"};
+  if(score >= 380) return {rank:"🥇 Prompt Architect", rating:"Excellent"};
+  if(score >= 280) return {rank:"🥈 Prompt Strategist", rating:"Great"};
+  if(score >= 180) return {rank:"🥉 Prompt Apprentice", rating:"Good"};
+  return {rank:"🌱 Prompt Novice", rating:"Keep Practicing"};
+}
+
+function renderDNA(){
+  const avgAcc = state.results.reduce((a,r)=>a+r.accuracy,0)/state.results.length;
+  const hintRatio = state.results.filter(r=>r.hintUsed).length/state.results.length;
+  const speedScore = Math.max(20, 100-state.moves);
+  const segs = [
+    {label:"Clarity", val: Math.round(avgAcc), color:"#22c55e"},
+    {label:"Structure", val: Math.round(100-hintRatio*100), color:"#7c3aed"},
+    {label:"Efficiency", val: Math.max(10,Math.min(100,Math.round(speedScore))), color:"#22d3ee"},
+    {label:"Precision", val: Math.max(10,100-state.wrong*8), color:"#fbbf24"}
+  ];
+  const total = segs.reduce((a,s)=>a+s.val,0);
+  return `<div class="dna-bar">${segs.map(s=>`<div class="dna-seg" style="width:${(s.val/total)*100}%;background:${s.color}" title="${s.label}: ${s.val}">${s.label}</div>`).join('')}</div>`;
+}
+
+function renderReport(){
+  const totalTime = Math.floor((Date.now()-state.startTime)/1000);
+  const {rank, rating} = computeRank(state.score);
+  const bestResult = state.results.reduce((a,b)=> b.scenarioScore>a.scenarioScore?b:a, state.results[0]);
+  const weakestResult = state.results.reduce((a,b)=> b.scenarioScore<a.scenarioScore?b:a, state.results[0]);
+  const nextMilestone = state.score < 480 ? (480-state.score) : 0;
+
+  document.getElementById('progressWrap').style.display='none';
+
+  app.innerHTML = `
+  <div class="card fade-in center">
+    <h2>📊 Prompt Performance Report</h2>
+    <div class="rank">${rank}</div>
+    <div class="badge">Rating: ${rating}</div>
+    <div class="statbar">
+      <div class="stat"><div class="val">${Math.round(state.score)}</div><div class="lab">Prompt Score</div></div>
+      <div class="stat"><div class="val">${state.accuracy}%</div><div class="lab">Accuracy</div></div>
+      <div class="stat"><div class="val">${state.moves}</div><div class="lab">Moves</div></div>
+      <div class="stat"><div class="val">${state.wrong}</div><div class="lab">Wrong</div></div>
+      <div class="stat"><div class="val">${state.hints}</div><div class="lab">Hints</div></div>
+      <div class="stat"><div class="val">${totalTime}s</div><div class="lab">Time</div></div>
+    </div>
+
+    <h3 style="margin-top:24px;">🧬 Prompt DNA</h3>
+    ${renderDNA()}
+
+    <h3 style="margin-top:24px;text-align:left;">💬 Personalized Feedback</h3>
+    <p style="text-align:left;color:var(--txt-dim);">
+      Your strongest moment was <b>"${bestResult.title}"</b> (${bestResult.type}) scoring ${bestResult.scenarioScore} pts —
+      you clearly grasped: <i>${bestResult.principle}</i><br><br>
+      Your growth opportunity is <b>"${weakestResult.title}"</b> (${weakestResult.type}) — revisit this principle:
+      <i>${weakestResult.principle}</i>
+    </p>
+
+    <h3 style="text-align:left;">🎯 Next Milestone</h3>
+    <p style="text-align:left;color:var(--txt-dim);">
+      ${nextMilestone>0 ? `Earn <b>${nextMilestone}</b> more points to reach Prompt Grandmaster status! Try replaying with fewer hints and faster, more accurate placements.` : `You've reached the top rank — Prompt Grandmaster! 🎉`}
+    </p>
+
+    <h3 style="text-align:left;">✨ Final Optimized Prompt Example</h3>
+    <div class="final-prompt">${bestResult.optimizedPrompt}</div>
+
+    <div class="row center" style="justify-content:center;margin-top:24px;">
+      <button class="btn" id="replayBtn">🔁 Replay with New Scenarios</button>
+    </div>
+  </div>`;
+
+  document.getElementById('replayBtn').addEventListener('click', ()=>{
+    state = {
+      idx:0, score:0, accuracy:100, moves:0, wrong:0, hints:0,
+      startTime:Date.now(), totalTime:0,
+      challengeTypes: assignChallengeTypes(), results:[]
+    };
+    document.getElementById('progressWrap').style.display='block';
+    // reshuffle scenario internal orders for freshness
+    SCENARIOS.forEach(sc=>{});
+    startScenario();
+    toast("🎲 New round started!", "good");
+  });
+}
+
+/* ============================= INIT ============================= */
+startScenario();
+</script>
+</body>
+</html>
