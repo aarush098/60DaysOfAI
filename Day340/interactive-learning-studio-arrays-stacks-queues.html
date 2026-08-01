@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Learning Studio · Arrays, Stacks &amp; Queues</title>
+<style>
+:root{
+  --bg:#0B0F14;
+  --bg-panel:#111823;
+  --bg-panel-2:#0E1520;
+  --line:#1E2A38;
+  --text:#E7EEF5;
+  --muted:#8DA0B3;
+  --faint:#5C6E80;
+  --mem:#2DD4BF;     /* array / memory */
+  --mem-dim:#134E4A;
+  --stack:#F5A524;   /* stack */
+  --stack-dim:#5A3B0B;
+  --queue:#8B7CF6;   /* queue */
+  --queue-dim:#332A63;
+  --danger:#F45B69;
+  --good:#38D39F;
+  --font-display:'Segoe UI Semibold','Segoe UI',system-ui,sans-serif;
+  --font-body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'Consolas','SFMono-Regular',Menlo,monospace;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font-body);line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important;} }
+
+::selection{background:var(--mem-dim);color:var(--mem);}
+
+/* ---------- Top progress rail ---------- */
+#railWrap{
+  position:sticky;top:0;z-index:50;background:rgba(11,15,20,.92);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+}
+#rail{
+  max-width:1100px;margin:0 auto;padding:12px 24px;
+  display:flex;align-items:center;gap:18px;
+}
+#rail .brand{font-family:var(--font-mono);font-size:13px;color:var(--faint);letter-spacing:.06em;white-space:nowrap;}
+#rail .brand b{color:var(--mem);}
+#dots{display:flex;gap:8px;flex:1;}
+.railDot{
+  flex:1;height:6px;border-radius:4px;background:var(--line);position:relative;overflow:hidden;cursor:pointer;
+}
+.railDot::after{
+  content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--mem),var(--queue));
+  width:var(--fill,0%);transition:width .5s ease;
+}
+#xpBadge{
+  font-family:var(--font-mono);font-size:12px;color:var(--stack);
+  border:1px solid var(--stack-dim);background:rgba(245,165,36,.08);
+  padding:4px 10px;border-radius:20px;white-space:nowrap;
+}
+
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px;}
+
+/* ---------- Hero ---------- */
+#hero{
+  padding:90px 0 60px;position:relative;
+}
+.addr-tape{
+  font-family:var(--font-mono);font-size:12px;color:var(--faint);
+  letter-spacing:.15em;text-transform:uppercase;margin-bottom:18px;
+  display:flex;gap:10px;flex-wrap:wrap;
+}
+.addr-tape span{color:var(--mem);}
+h1.title{
+  font-family:var(--font-display);font-size:clamp(2.2rem,5vw,3.6rem);
+  margin:0 0 14px;line-height:1.05;letter-spacing:-.01em;
+}
+h1.title .g{
+  background:linear-gradient(90deg,var(--mem),var(--queue));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+#hero p.lead{color:var(--muted);font-size:1.08rem;max-width:640px;margin:0 0 30px;}
+
+.memRow{display:flex;gap:6px;margin:24px 0 36px;flex-wrap:wrap;}
+.memCell{
+  width:52px;height:52px;border:1px solid var(--mem-dim);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:14px;color:var(--mem);
+  background:rgba(45,212,191,.06);position:relative;
+  animation:pop .5s ease backwards;
+}
+.memCell small{position:absolute;bottom:-18px;font-size:9px;color:var(--faint);}
+@keyframes pop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+.infoGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:44px;}
+.infoCard{
+  background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 20px;
+}
+.infoCard .k{font-family:var(--font-mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.infoCard .v{font-size:15px;color:var(--text);}
+.infoCard ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px;}
+.infoCard ul li{margin-bottom:4px;}
+
+.rewardBar{
+  margin-top:28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:linear-gradient(90deg,rgba(245,165,36,.08),rgba(139,124,246,.08));
+  border:1px solid var(--line);border-radius:var(--radius);padding:16px 20px;
+}
+.rewardBar .icon{font-size:22px;}
+.badgeRow{display:flex;gap:8px;flex-wrap:wrap;}
+.badge{
+  font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:20px;
+  border:1px solid var(--line);color:var(--faint);background:var(--bg-panel-2);
+  transition:.3s;
+}
+.badge.earned{color:var(--bg);background:var(--good);border-color:var(--good);font-weight:600;}
+
+.startBtn{
+  margin-top:34px;display:inline-flex;align-items:center;gap:10px;
+  background:var(--mem);color:#04211D;border:none;padding:14px 26px;border-radius:8px;
+  font-weight:700;font-size:15px;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;
+  font-family:var(--font-body);
+}
+.startBtn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(45,212,191,.25);}
+
+/* ---------- Modules ---------- */
+.module{padding:70px 0;border-top:1px solid var(--line);scroll-margin-top:70px;}
+.module.locked{opacity:.35;pointer-events:none;filter:grayscale(.6);}
+.modHead{display:flex;align-items:baseline;gap:16px;margin-bottom:8px;flex-wrap:wrap;}
+.modNum{font-family:var(--font-mono);font-size:13px;color:var(--faint);letter-spacing:.1em;}
+h2.modTitle{font-family:var(--font-display);font-size:clamp(1.6rem,3.4vw,2.2rem);margin:0;}
+.modSub{color:var(--muted);margin:0 0 34px;max-width:680px;}
+.accent-array .modNum,.accent-array h2.modTitle{color:var(--mem);}
+.accent-stack .modNum,.accent-stack h2.modTitle{color:var(--stack);}
+.accent-queue .modNum,.accent-queue h2.modTitle{color:var(--queue);}
+.accent-mastery .modNum,.accent-mastery h2.modTitle{color:#F45B69;}
+
+section.block{margin-bottom:46px;}
+h3.blockTitle{
+  font-family:var(--font-display);font-size:1.15rem;margin:0 0 14px;
+  display:flex;align-items:center;gap:8px;
+}
+h3.blockTitle .tag{
+  font-family:var(--font-mono);font-size:10px;color:var(--faint);
+  border:1px solid var(--line);padding:2px 7px;border-radius:4px;text-transform:uppercase;
+}
+p{color:var(--text);}
+p.dim{color:var(--muted);}
+
+.twoCol{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;}
+@media(max-width:820px){.twoCol{grid-template-columns:1fr;}}
+
+.codeBlock{
+  background:var(--bg-panel-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;font-family:var(--font-mono);font-size:13px;color:#C9D6E3;
+  overflow-x:auto;white-space:pre;
+}
+.codeBlock .c{color:#5C6E80;}
+.codeBlock .k{color:var(--queue);}
+.codeBlock .s{color:var(--good);}
+.codeBlock .n{color:var(--stack);}
+
+.analogyCard{
+  background:var(--bg-panel);border:1px dashed var(--line);border-radius:var(--radius);
+  padding:18px 20px;font-size:14.5px;color:var(--muted);
+}
+.analogyCard b{color:var(--text);}
+
+.compareTable{width:100%;border-collapse:collapse;font-size:14px;}
+.compareTable th,.compareTable td{
+  border:1px solid var(--line);padding:10px 12px;text-align:left;
+}
+.compareTable th{background:var(--bg-panel-2);color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em;}
+.compareTable td{color:var(--text);}
+.compareTable tr:nth-child(even) td{background:rgba(255,255,255,.015);}
+
+.misconception{
+  border-left:3px solid var(--danger);background:rgba(244,91,105,.06);
+  padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px;color:var(--muted);margin-bottom:10px;
+}
+.misconception b{color:var(--danger);}
+
+.takeaways{
+  background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;
+}
+.takeaways li{margin-bottom:8px;color:var(--muted);}
+.takeaways li::marker{color:var(--good);}
+
+/* interactive visualizers */
+.visBox{
+  background:var(--bg-panel-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;margin:18px 0;
+}
+.visControls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+.visControls input[type=text]{
+  background:var(--bg);border:1px solid var(--line);color:var(--text);padding:8px 10px;
+  border-radius:6px;font-family:var(--font-mono);width:90px;font-size:13px;
+}
+.btn{
+  font-family:var(--font-body);font-weight:600;font-size:13px;padding:8px 16px;border-radius:6px;
+  border:1px solid var(--line);background:var(--bg-panel);color:var(--text);cursor:pointer;transition:.2s;
+}
+.btn:hover{border-color:var(--mem);color:var(--mem);}
+.btn.stackBtn:hover{border-color:var(--stack);color:var(--stack);}
+.btn.queueBtn:hover{border-color:var(--queue);color:var(--queue);}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.visStage{min-height:110px;display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap;}
+.visLog{font-family:var(--font-mono);font-size:12px;color:var(--faint);margin-top:14px;min-height:18px;}
+
+.stackFrame{
+  width:100%;max-width:160px;background:rgba(245,165,36,.1);border:1px solid var(--stack-dim);
+  color:var(--stack);font-family:var(--font-mono);text-align:center;padding:10px;border-radius:6px;
+  animation:slideDown .35s ease;
+}
+@keyframes slideDown{from{transform:translateY(-16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.stackCol{display:flex;flex-direction:column-reverse;gap:6px;width:100%;align-items:center;}
+
+.queueRow{display:flex;gap:6px;align-items:center;}
+.queueCell{
+  width:52px;height:52px;background:rgba(139,124,246,.1);border:1px solid var(--queue-dim);
+  color:var(--queue);font-family:var(--font-mono);display:flex;align-items:center;justify-content:center;
+  border-radius:6px;animation:pop .35s ease;
+}
+
+.exercise{
+  background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-top:14px;
+}
+.exercise .goal{font-size:13px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.exercise textarea{
+  width:100%;min-height:90px;background:var(--bg-panel-2);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;padding:12px;font-family:var(--font-mono);font-size:13px;resize:vertical;
+}
+.exercise .reveal{margin-top:10px;}
+details.solution summary{cursor:pointer;color:var(--mem);font-size:13px;font-weight:600;}
+details.solution .codeBlock{margin-top:10px;}
+
+/* Quiz */
+.quiz{
+  margin-top:56px;background:var(--bg-panel);border:1px solid var(--line);border-radius:14px;padding:30px 30px 26px;
+}
+.quiz h3{font-family:var(--font-display);margin:0 0 4px;font-size:1.3rem;}
+.quiz p.qsub{color:var(--muted);margin:0 0 20px;font-size:13.5px;}
+.qItem{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid var(--line);}
+.qItem:last-of-type{border-bottom:none;}
+.qText{font-weight:600;margin-bottom:12px;}
+.qOptions{display:flex;flex-direction:column;gap:8px;}
+.qOpt{
+  border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;font-size:14px;
+  color:var(--muted);transition:.15s;
+}
+.qOpt:hover{border-color:var(--faint);}
+.qOpt.selected{border-color:var(--queue);color:var(--text);background:rgba(139,124,246,.07);}
+.qOpt.correct{border-color:var(--good)!important;color:var(--good)!important;background:rgba(56,211,159,.08)!important;}
+.qOpt.incorrect{border-color:var(--danger)!important;color:var(--danger)!important;background:rgba(244,91,105,.08)!important;}
+.qExplain{
+  display:none;margin-top:10px;font-size:13px;color:var(--muted);
+  background:var(--bg-panel-2);padding:10px 14px;border-radius:8px;border-left:3px solid var(--faint);
+}
+.qExplain.show{display:block;}
+.quizFooter{display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:12px;}
+.scoreSummary{
+  display:none;text-align:center;padding:26px;background:var(--bg-panel-2);border-radius:12px;margin-top:16px;
+}
+.scoreSummary.show{display:block;}
+.scoreSummary .big{font-family:var(--font-display);font-size:2.4rem;margin-bottom:6px;}
+.scoreSummary.pass .big{color:var(--good);}
+.scoreSummary.fail .big{color:var(--danger);}
+.unlockBtn{
+  margin-top:16px;background:var(--good);color:#04211D;border:none;padding:12px 24px;border-radius:8px;
+  font-weight:700;cursor:pointer;font-size:14px;
+}
+
+/* Final / resources */
+#final{padding:80px 0;border-top:1px solid var(--line);}
+.challengeCard{
+  background:linear-gradient(135deg,rgba(45,212,191,.08),rgba(139,124,246,.08));
+  border:1px solid var(--line);border-radius:14px;padding:28px 30px;margin-bottom:40px;
+}
+.cheatGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:40px;}
+.cheatCard{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+.cheatCard h4{margin:0 0 8px;font-size:14px;color:var(--mem);font-family:var(--font-mono);}
+.cheatCard .codeBlock{font-size:12px;padding:10px 12px;}
+
+.resGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+.resCard{background:var(--bg-panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+.resCard .k{font-family:var(--font-mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.resCard ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px;}
+.resCard ul li{margin-bottom:6px;}
+.kw{display:inline-block;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12px;font-family:var(--font-mono);color:var(--muted);margin:3px 4px 0 0;}
+
+.printBtn,.resetBtn{
+  font-family:var(--font-mono);font-size:12px;color:var(--faint);background:none;border:1px solid var(--line);
+  padding:8px 14px;border-radius:6px;cursor:pointer;
+}
+.printBtn:hover,.resetBtn:hover{color:var(--text);border-color:var(--faint);}
+
+footer{padding:40px 0 60px;text-align:center;color:var(--faint);font-size:12px;font-family:var(--font-mono);}
+
+@media print{
+  #railWrap,.startBtn,.visBox,.quiz .qOptions,button{display:none!important;}
+  body{background:#fff;color:#000;}
+}
+</style>
+</head>
+<body>
+
+<div id="railWrap">
+  <div id="rail">
+    <div class="brand"><b>ILS</b> · Arrays / Stacks / Queues</div>
+    <div id="dots">
+      <div class="railDot" data-target="mod1" title="Module 1"><div style="--fill:0%" class="fillEl"></div></div>
+      <div class="railDot" data-target="mod2" title="Module 2"><div style="--fill:0%" class="fillEl"></div></div>
+      <div class="railDot" data-target="mod3" title="Module 3"><div style="--fill:0%" class="fillEl"></div></div>
+      <div class="railDot" data-target="mod4" title="Module 4"><div style="--fill:0%" class="fillEl"></div></div>
+    </div>
+    <div id="xpBadge">0 XP</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="addr-tape">0x00 <span>ARRAYS</span> · 0x01 <span>STACKS</span> · 0x02 <span>QUEUES</span> · a single contiguous tutorial</div>
+    <h1 class="title">Arrays, Stacks &amp; <span class="g">Queues</span></h1>
+    <p class="lead">The three data structures every other structure is built from. You'll learn how memory actually holds them, why LIFO and FIFO shape real systems from browser history to print queues, and how to reach for the right one under pressure.</p>
+
+    <div class="memRow" id="heroMem"></div>
+
+    <button class="startBtn" onclick="scrollToId('mod1')">Begin Module 1 →</button>
+
+    <div class="infoGrid">
+      <div class="infoCard">
+        <div class="k">Learning objectives</div>
+        <ul>
+          <li>Explain how arrays map to contiguous memory addresses</li>
+          <li>Implement stack &amp; queue behavior from scratch</li>
+          <li>Choose the right structure by access pattern, not habit</li>
+          <li>Solve classic interview problems using all three</li>
+        </ul>
+      </div>
+      <div class="infoCard">
+        <div class="k">Estimated time</div>
+        <div class="v">55–70 minutes</div>
+        <div class="k" style="margin-top:14px;">Prerequisites</div>
+        <div class="v" style="font-size:14px;color:var(--muted);">Basic variables, loops, and one programming language (examples use pseudocode + JS)</div>
+      </div>
+      <div class="infoCard">
+        <div class="k">Expected outcomes</div>
+        <ul>
+          <li>Build a dynamic array, stack, and queue by hand</li>
+          <li>Debug off-by-one and overflow/underflow bugs confidently</li>
+          <li>Recognize these patterns inside larger systems</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rewardBar">
+      <div class="icon">🏅</div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Earn a badge per module quiz passed (≥75%). Collect all four to complete the studio.</div>
+        <div class="badgeRow" id="badgeRow">
+          <span class="badge" data-badge="b1">Indexer</span>
+          <span class="badge" data-badge="b2">Stackmaster</span>
+          <span class="badge" data-badge="b3">Line Keeper</span>
+          <span class="badge" data-badge="b4">Structure Sage</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULE 1: ARRAYS -->
+  <section class="module accent-array" id="mod1">
+    <div class="modHead"><span class="modNum">MODULE 01 / FOUNDATION</span></div>
+    <h2 class="modTitle">Arrays — Contiguous Memory</h2>
+    <p class="modSub">Everything a stack or queue can do, an array can be made to do underneath. Start here to understand the ground floor.</p>
+
+    <section class="block">
+      <h3 class="blockTitle">Explanation <span class="tag">core idea</span></h3>
+      <div class="twoCol">
+        <div>
+          <p>An array is a block of memory cells sitting <b>right next to each other</b>, each the same size, each reachable by an index. If the array starts at address <code>0x1000</code> and each element is 4 bytes, element <code>i</code> lives at <code>0x1000 + i × 4</code>. That formula is the entire trick — no searching, no walking pointers. That's why <code>arr[7]</code> is O(1): it's arithmetic, not a search.</p>
+          <p class="dim">Fixed-size arrays reserve that block once. Dynamic arrays (JS arrays, Python lists, C++ <code>vector</code>) fake resizability by allocating a bigger block and copying everything over when they run out of room.</p>
+        </div>
+        <div class="codeBlock"><span class="c">// address of arr[i]</span>
+address(i) = base + i * elementSize
+
+<span class="c">// example: 4-byte ints, base 0x1000</span>
+arr[0] → 0x1000
+arr[1] → 0x1004
+arr[2] → 0x1008</span></div>
+      </div>
+      <div class="memRow" id="modMem" style="margin-top:20px;"></div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Analogy</h3>
+      <div class="analogyCard">Think of a <b>row of numbered lockers</b> bolted to one wall, all identical size. If you know the locker number, you walk straight to it — no need to check every locker before it. But if the row is full and a new locker needs to fit, you can't just wedge one in — you need a whole new, longer wall, and every locker's contents gets carried over.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Try it <span class="tag">interactive</span></h3>
+      <div class="visBox">
+        <div class="visControls">
+          <input type="text" id="arrInput" placeholder="value" maxlength="4">
+          <button class="btn" onclick="arrPush()">Push (append)</button>
+          <button class="btn" onclick="arrPop()">Pop last</button>
+          <button class="btn" onclick="arrInsertStart()">Insert at 0</button>
+          <button class="btn" onclick="arrReset()">Reset</button>
+        </div>
+        <div class="visStage" id="arrStage"></div>
+        <div class="visLog" id="arrLog">Capacity: 4 / 4 used — try inserting at position 0 to see every element shift.</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Comparison <span class="tag">fixed vs dynamic</span></h3>
+      <table class="compareTable">
+        <tr><th>Operation</th><th>Fixed array</th><th>Dynamic array</th></tr>
+        <tr><td>Read by index</td><td>O(1)</td><td>O(1)</td></tr>
+        <tr><td>Append at end</td><td>N/A (full = error)</td><td>O(1) amortized, O(n) on resize</td></tr>
+        <tr><td>Insert/delete at front</td><td>O(n) shift</td><td>O(n) shift</td></tr>
+        <tr><td>Memory overhead</td><td>None</td><td>Extra unused capacity</td></tr>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Exercise</h3>
+      <div class="exercise">
+        <div class="goal">Predict the output</div>
+        <p class="dim">Given <code>arr = [10, 20, 30]</code>, what does <code>arr</code> look like after <code>arr.splice(1, 0, 99)</code>? Write your answer, then reveal.</p>
+        <textarea placeholder="Type your predicted array here..."></textarea>
+        <div class="reveal">
+          <details class="solution">
+            <summary>Reveal answer</summary>
+            <div class="codeBlock">[10, 99, 20, 30]
+<span class="c">// splice inserts 99 at index 1, shifting 20 and 30 right by one slot</span></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Common misconceptions</h3>
+      <div class="misconception"><b>"Arrays can always grow for free."</b> Dynamic arrays only feel free — under the hood, growing past capacity means allocating a new block and copying every element, an O(n) operation that just happens rarely enough to average out.</div>
+      <div class="misconception"><b>"Index 0 is just a convention."</b> It's the direct result of the address formula — <code>base + 0 × size</code> is the base address itself. Indexing from 0 isn't a style choice, it falls out of the memory math.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Key takeaways</h3>
+      <div class="takeaways"><ul>
+        <li>Arrays trade flexibility for speed: O(1) reads because position is pure arithmetic.</li>
+        <li>Inserting or deleting anywhere but the end costs O(n) because elements must shift.</li>
+        <li>"Dynamic" arrays are fixed arrays that secretly reallocate and copy when full.</li>
+      </ul></div>
+    </section>
+  </section>
+
+  <!-- QUIZ 1 -->
+  <div class="quiz" id="quiz1" data-mod="1">
+    <h3>Checkpoint Quiz — Arrays</h3>
+    <p class="qsub">Answer all 4 to unlock Module 2. 75% (3/4) required to pass.</p>
+    <div id="quiz1Items"></div>
+    <div class="quizFooter">
+      <span style="font-size:12px;color:var(--faint);" id="quiz1Progress">0 / 4 answered</span>
+      <button class="btn" onclick="gradeQuiz(1)">Submit answers</button>
+    </div>
+    <div class="scoreSummary" id="quiz1Summary"></div>
+  </div>
+
+  <!-- MODULE 2: STACKS -->
+  <section class="module accent-stack locked" id="mod2">
+    <div class="modHead"><span class="modNum">MODULE 02 / APPLICATION</span></div>
+    <h2 class="modTitle">Stacks — Last In, First Out</h2>
+    <p class="modSub">Restrict an array to two operations at one end only, and you get a stack — a structure that quietly runs your function calls, your undo button, and your browser's back arrow.</p>
+
+    <section class="block">
+      <h3 class="blockTitle">Explanation</h3>
+      <div class="twoCol">
+        <div>
+          <p>A stack only allows two moves: <b>push</b> (add to the top) and <b>pop</b> (remove from the top). Nothing else is reachable directly — you can't grab the third item from the top without first popping the two above it. That discipline is the whole point: it enforces an order guarantee, <b>Last In, First Out (LIFO)</b>.</p>
+          <p class="dim">Every function call in every programming language uses a call stack: when function A calls B, B is pushed on top; when B returns, it's popped, and control resumes exactly where A left off.</p>
+        </div>
+        <div class="codeBlock"><span class="k">class</span> Stack {
+  items = []
+  push(v) { items.push(v) }   <span class="c">// O(1)</span>
+  pop()   { <span class="k">return</span> items.pop() } <span class="c">// O(1)</span>
+  peek()  { <span class="k">return</span> items.at(-1) }
+}</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Analogy</h3>
+      <div class="analogyCard">A <b>stack of plates</b> in a cafeteria spring-loader. You can only take the top plate, and you can only add a plate to the top. To reach the fifth plate down, you'd have to remove four plates first — the structure physically prevents any other order.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Try it <span class="tag">interactive</span></h3>
+      <div class="visBox">
+        <div class="visControls">
+          <input type="text" id="stackInput" placeholder="value" maxlength="6">
+          <button class="btn stackBtn" onclick="stackPush()">Push</button>
+          <button class="btn stackBtn" onclick="stackPop()">Pop</button>
+          <button class="btn stackBtn" onclick="stackReset()">Reset</button>
+        </div>
+        <div class="visStage"><div class="stackCol" id="stackStage"></div></div>
+        <div class="visLog" id="stackLog">Push a few values, then pop — notice the last one pushed is always the first one popped.</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Comparison <span class="tag">array vs stack vs linked-list stack</span></h3>
+      <table class="compareTable">
+        <tr><th>Property</th><th>Plain array</th><th>Array-backed stack</th><th>Linked-list stack</th></tr>
+        <tr><td>Random access</td><td>Yes, O(1)</td><td>Disallowed by convention</td><td>Disallowed, and impossible anyway</td></tr>
+        <tr><td>Push/Pop</td><td>—</td><td>O(1) at end</td><td>O(1) at head</td></tr>
+        <tr><td>Memory</td><td>Contiguous</td><td>Contiguous, may over-allocate</td><td>Scattered, extra pointer per node</td></tr>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Exercise</h3>
+      <div class="exercise">
+        <div class="goal">Trace the call stack</div>
+        <p class="dim">Given <code>f()</code> calls <code>g()</code>, which calls <code>h()</code> — list the order frames are popped as each function returns.</p>
+        <textarea placeholder="e.g. h, then g, then f..."></textarea>
+        <details class="solution">
+          <summary>Reveal answer</summary>
+          <div class="codeBlock">Push order: f → g → h
+Pop order:  h → g → f
+<span class="c">// h finishes first because it's on top — the last one pushed</span></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Common misconceptions</h3>
+      <div class="misconception"><b>"A stack is a totally different structure from an array."</b> Most stacks are literally an array underneath, with a rule bolted on: only touch the last index. The restriction is the feature.</div>
+      <div class="misconception"><b>"Stack overflow means the stack is 'full'."</b> It means recursion or nesting went too deep for the memory reserved for the call stack — usually a missing base case, not a capacity problem to fix by allocating more.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Key takeaways</h3>
+      <div class="takeaways"><ul>
+        <li>Stacks enforce LIFO by only exposing the top of an underlying array or list.</li>
+        <li>Push and pop are both O(1) — no shifting, because only the end ever changes.</li>
+        <li>Recursion, undo history, and expression parsing all lean on this exact structure.</li>
+      </ul></div>
+    </section>
+  </section>
+
+  <div class="quiz" id="quiz2" data-mod="2">
+    <h3>Checkpoint Quiz — Stacks</h3>
+    <p class="qsub">Answer all 4 to unlock Module 3.</p>
+    <div id="quiz2Items"></div>
+    <div class="quizFooter">
+      <span style="font-size:12px;color:var(--faint);" id="quiz2Progress">0 / 4 answered</span>
+      <button class="btn stackBtn" onclick="gradeQuiz(2)">Submit answers</button>
+    </div>
+    <div class="scoreSummary" id="quiz2Summary"></div>
+  </div>
+
+  <!-- MODULE 3: QUEUES -->
+  <section class="module accent-queue locked" id="mod3">
+    <div class="modHead"><span class="modNum">MODULE 03 / APPLICATION</span></div>
+    <h2 class="modTitle">Queues — First In, First Out</h2>
+    <p class="modSub">Flip the restriction to the other end and you get fairness instead of urgency: whoever arrived first gets served first.</p>
+
+    <section class="block">
+      <h3 class="blockTitle">Explanation</h3>
+      <div class="twoCol">
+        <div>
+          <p>A queue allows <b>enqueue</b> at the back and <b>dequeue</b> from the front — <b>First In, First Out (FIFO)</b>. Printers, task schedulers, and message brokers all use this shape because it guarantees order of arrival is preserved.</p>
+          <p class="dim">Naively removing from the front of an array is O(n) — everything shifts left. Real implementations use a <b>circular buffer</b> (two pointers, front and back, wrapping around a fixed block) so both ends stay O(1).</p>
+        </div>
+        <div class="codeBlock"><span class="k">class</span> Queue {
+  items = []
+  enqueue(v){ items.push(v) }        <span class="c">// back, O(1)</span>
+  dequeue()  { <span class="k">return</span> items.shift() } <span class="c">// front, O(n) naive</span>
+}
+<span class="c">// circular buffer avoids the O(n) shift using front/back indices</span></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Analogy</h3>
+      <div class="analogyCard">A <b>coffee shop line</b>. New customers join at the back; the barista only serves the person at the front. No cutting — whoever waited longest is served next. A <b>circular queue</b> is that same line wrapped around a roundabout: once the last seat is freed at the front, a new customer can loop around to fill it, instead of the whole line shuffling forward.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Try it <span class="tag">interactive</span></h3>
+      <div class="visBox">
+        <div class="visControls">
+          <input type="text" id="queueInput" placeholder="value" maxlength="6">
+          <button class="btn queueBtn" onclick="queueEnqueue()">Enqueue</button>
+          <button class="btn queueBtn" onclick="queueDequeue()">Dequeue</button>
+          <button class="btn queueBtn" onclick="queueReset()">Reset</button>
+        </div>
+        <div class="visStage"><div class="queueRow" id="queueStage"></div></div>
+        <div class="visLog" id="queueLog">Enqueue a few values — dequeue always removes from the front (leftmost), never the back.</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Comparison <span class="tag">stack vs queue vs deque</span></h3>
+      <table class="compareTable">
+        <tr><th>Structure</th><th>Insert</th><th>Remove</th><th>Order guarantee</th><th>Typical use</th></tr>
+        <tr><td>Stack</td><td>One end (top)</td><td>Same end</td><td>LIFO</td><td>Undo, recursion, parsing</td></tr>
+        <tr><td>Queue</td><td>Back</td><td>Front</td><td>FIFO</td><td>Task scheduling, printing</td></tr>
+        <tr><td>Deque</td><td>Either end</td><td>Either end</td><td>Neither, by choice</td><td>Sliding window, browser history</td></tr>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Exercise</h3>
+      <div class="exercise">
+        <div class="goal">Spot the bug</div>
+        <p class="dim">A print queue implementation calls <code>items.pop()</code> instead of <code>items.shift()</code> to remove the next job. What breaks?</p>
+        <textarea placeholder="Explain what goes wrong..."></textarea>
+        <details class="solution">
+          <summary>Reveal answer</summary>
+          <div class="codeBlock"><span class="c">// pop() removes from the END (LIFO behavior)
+// but a queue must remove from the FRONT (FIFO)
+// result: the most recently added job prints first —
+// jobs submitted earlier get stuck waiting indefinitely</span></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Common misconceptions</h3>
+      <div class="misconception"><b>"Queue and stack are interchangeable if I just track two ends."</b> The end you remove from is what defines the guarantee. Swap it and FIFO silently becomes LIFO — often the hardest kind of bug to spot because it "looks" like it's queuing.</div>
+      <div class="misconception"><b>"Array.shift() is fine for a queue."</b> It works correctly but is O(n) per call in most languages, since every remaining element must shift left — a circular buffer or linked list avoids that cost.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Key takeaways</h3>
+      <div class="takeaways"><ul>
+        <li>Queues guarantee FIFO by restricting insertion to the back and removal to the front.</li>
+        <li>Naive array queues cost O(n) to dequeue; circular buffers keep it O(1).</li>
+        <li>A deque generalizes both stack and queue by allowing either end to be used.</li>
+      </ul></div>
+    </section>
+  </section>
+
+  <div class="quiz" id="quiz3" data-mod="3">
+    <h3>Checkpoint Quiz — Queues</h3>
+    <p class="qsub">Answer all 4 to unlock Module 4.</p>
+    <div id="quiz3Items"></div>
+    <div class="quizFooter">
+      <span style="font-size:12px;color:var(--faint);" id="quiz3Progress">0 / 4 answered</span>
+      <button class="btn queueBtn" onclick="gradeQuiz(3)">Submit answers</button>
+    </div>
+    <div class="scoreSummary" id="quiz3Summary"></div>
+  </div>
+
+  <!-- MODULE 4: MASTERY -->
+  <section class="module accent-mastery locked" id="mod4">
+    <div class="modHead"><span class="modNum">MODULE 04 / MASTERY</span></div>
+    <h2 class="modTitle">Choosing &amp; Combining Structures</h2>
+    <p class="modSub">Real problems rarely announce which structure to use. This module builds the judgment to choose fast, plus two classic problems that combine everything so far.</p>
+
+    <section class="block">
+      <h3 class="blockTitle">Explanation</h3>
+      <p>The decision usually comes down to <b>one question</b>: what access pattern does the problem demand?</p>
+      <ul style="color:var(--muted);">
+        <li><b>Need any element by position, often?</b> → Array.</li>
+        <li><b>Need to undo the most recent action, or match nested pairs?</b> → Stack.</li>
+        <li><b>Need to process things in the order they arrived?</b> → Queue.</li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Worked example 1 <span class="tag">stack</span></h3>
+      <p class="dim">Validating balanced brackets like <code>"{[()]}"</code> — the classic proof that stacks understand nesting.</p>
+      <div class="codeBlock"><span class="k">function</span> isValid(s) {
+  <span class="k">const</span> stack = [];
+  <span class="k">const</span> pairs = { <span class="s">')'</span>: <span class="s">'('</span>, <span class="s">']'</span>: <span class="s">'['</span>, <span class="s">'}'</span>: <span class="s">'{'</span> };
+  <span class="k">for</span> (<span class="k">const</span> ch <span class="k">of</span> s) {
+    <span class="k">if</span> (!pairs[ch]) stack.push(ch);           <span class="c">// opening bracket</span>
+    <span class="k">else if</span> (stack.pop() !== pairs[ch]) <span class="k">return</span> <span class="k">false</span>; <span class="c">// mismatch</span>
+  }
+  <span class="k">return</span> stack.length === 0;
+}</div>
+      <p class="dim">Every opening bracket is pushed; every closing bracket must match whatever is currently on top. If it doesn't, the nesting is broken — a direct use of LIFO order.</p>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Worked example 2 <span class="tag">queue via two stacks</span></h3>
+      <p class="dim">A classic interview twist: build a FIFO queue using only two LIFO stacks.</p>
+      <div class="codeBlock"><span class="k">class</span> QueueFromStacks {
+  inStack = []; outStack = [];
+  enqueue(v) { inStack.push(v) }
+  dequeue() {
+    <span class="k">if</span> (outStack.length === 0)
+      <span class="k">while</span> (inStack.length) outStack.push(inStack.pop());
+    <span class="k">return</span> outStack.pop();
+  }
+}
+<span class="c">// reversing into outStack twice restores original arrival order</span></div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Comparison <span class="tag">complexity cheat view</span></h3>
+      <table class="compareTable">
+        <tr><th>Structure</th><th>Access</th><th>Insert (best case)</th><th>Delete (best case)</th></tr>
+        <tr><td>Array</td><td>O(1)</td><td>O(1) at end</td><td>O(1) at end</td></tr>
+        <tr><td>Stack</td><td>O(n) (top only O(1))</td><td>O(1)</td><td>O(1)</td></tr>
+        <tr><td>Queue</td><td>O(n) (front only O(1))</td><td>O(1)</td><td>O(1) with circular buffer</td></tr>
+      </table>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Practical exercise</h3>
+      <div class="exercise">
+        <div class="goal">Design decision</div>
+        <p class="dim">A ride-share app needs to match the <i>longest-waiting</i> driver to the next request, but also let a driver cancel and re-add themselves to the very front if a trip falls through last-minute. Which single structure fits best, and why?</p>
+        <textarea placeholder="Your reasoning..."></textarea>
+        <details class="solution">
+          <summary>Reveal answer</summary>
+          <div class="codeBlock"><span class="c">// A DEQUE (double-ended queue).
+// Normal matching = dequeue from the front (FIFO fairness).
+// Re-adding to the front after a cancelled trip needs
+// insertion at the front too — something a plain queue
+// can't do without breaking its own invariant.</span></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Common misconceptions</h3>
+      <div class="misconception"><b>"More advanced structures (trees, graphs) replace these."</b> Trees and graphs are usually built <i>from</i> arrays, stacks, and queues — tree traversal is a queue (BFS) or a stack (DFS) in disguise.</div>
+    </section>
+
+    <section class="block">
+      <h3 class="blockTitle">Key takeaways</h3>
+      <div class="takeaways"><ul>
+        <li>Choose by access pattern: random access → array, nesting/undo → stack, arrival order → queue.</li>
+        <li>Stacks and queues are usually thin behavioral wrappers over an array or linked list.</li>
+        <li>A deque combines both when a problem needs flexibility at either end.</li>
+      </ul></div>
+    </section>
+  </section>
+
+  <div class="quiz" id="quiz4" data-mod="4">
+    <h3>Checkpoint Quiz — Mastery</h3>
+    <p class="qsub">Final checkpoint — pass to complete the studio.</p>
+    <div id="quiz4Items"></div>
+    <div class="quizFooter">
+      <span style="font-size:12px;color:var(--faint);" id="quiz4Progress">0 / 4 answered</span>
+      <button class="btn" style="border-color:#F45B69;color:#F45B69;" onclick="gradeQuiz(4)">Submit answers</button>
+    </div>
+    <div class="scoreSummary" id="quiz4Summary"></div>
+  </div>
+
+  <!-- FINAL -->
+  <section id="final" class="locked">
+    <div class="modHead"><span class="modNum" style="color:var(--good);">FINAL</span></div>
+    <h2 class="modTitle">Practical Challenge &amp; Continued Learning</h2>
+
+    <div class="challengeCard">
+      <h3 class="blockTitle" style="margin-top:0;">Final challenge</h3>
+      <p>Implement a <b>"min-stack"</b>: a stack that supports push, pop, and a <code>getMin()</code> that returns the current minimum — all in O(1). Hint: an ordinary stack combined with a second stack that tracks running minimums solves this without scanning.</p>
+      <details class="solution">
+        <summary>Reveal one working approach</summary>
+        <div class="codeBlock"><span class="k">class</span> MinStack {
+  stack = []; minStack = [];
+  push(v) {
+    stack.push(v);
+    <span class="k">const</span> currentMin = minStack.length ? Math.min(v, minStack.at(-1)) : v;
+    minStack.push(currentMin);
+  }
+  pop() { stack.pop(); minStack.pop(); }
+  getMin() { <span class="k">return</span> minStack.at(-1); }
+}</div>
+      </details>
+    </div>
+
+    <div class="cheatGrid">
+      <div class="cheatCard">
+        <h4>ARRAY</h4>
+        <div class="codeBlock">index(i) = base + i*size
+read: O(1)  insert@end: O(1)*
+insert@front: O(n)</div>
+      </div>
+      <div class="cheatCard">
+        <h4>STACK (LIFO)</h4>
+        <div class="codeBlock">push() → top
+pop()  ← top
+peek() = top, no removal</div>
+      </div>
+      <div class="cheatCard">
+        <h4>QUEUE (FIFO)</h4>
+        <div class="codeBlock">enqueue() → back
+dequeue() ← front
+circular buffer = O(1) both ends</div>
+      </div>
+      <div class="cheatCard">
+        <h4>WHEN TO USE</h4>
+        <div class="codeBlock">random access     → array
+undo / nesting    → stack
+arrival order     → queue
+either end        → deque</div>
+      </div>
+    </div>
+
+    <div class="resGrid">
+      <div class="resCard">
+        <div class="k">Books</div>
+        <ul>
+          <li>"Grokking Algorithms" — Aditya Bhargava</li>
+          <li>"Introduction to Algorithms" (CLRS) — Ch. 10</li>
+          <li>"A Common-Sense Guide to Data Structures and Algorithms" — Jay Wengrow</li>
+        </ul>
+      </div>
+      <div class="resCard">
+        <div class="k">Documentation</div>
+        <ul>
+          <li>MDN — Array (developer.mozilla.org)</li>
+          <li>Python docs — collections.deque</li>
+          <li>cppreference — std::stack, std::queue</li>
+        </ul>
+      </div>
+      <div class="resCard">
+        <div class="k">Research &amp; further reading</div>
+        <ul>
+          <li>"Amortized Analysis of Dynamic Arrays" — classic amortized-cost proofs</li>
+          <li>Circular buffer design notes in real-time systems literature</li>
+        </ul>
+      </div>
+      <div class="resCard">
+        <div class="k">Communities</div>
+        <ul>
+          <li>r/learnprogramming, r/algorithms</li>
+          <li>Stack Overflow — [data-structures] tag</li>
+          <li>CS50 community forums</li>
+        </ul>
+      </div>
+      <div class="resCard">
+        <div class="k">Practice platforms</div>
+        <ul>
+          <li>LeetCode — Stack &amp; Queue problem set</li>
+          <li>HackerRank — Data Structures track</li>
+          <li>NeetCode.io — curated pattern list</li>
+        </ul>
+      </div>
+      <div class="resCard">
+        <div class="k">Search keywords</div>
+        <div>
+          <span class="kw">dynamic array amortized cost</span>
+          <span class="kw">circular buffer implementation</span>
+          <span class="kw">valid parentheses leetcode</span>
+          <span class="kw">min stack O(1)</span>
+          <span class="kw">queue using two stacks</span>
+        </div>
+      </div>
+      <div class="resCard">
+        <div class="k">AI prompts for further learning</div>
+        <ul>
+          <li>"Walk me through implementing a circular buffer step by step."</li>
+          <li>"Quiz me on when to use a deque vs a queue with 5 scenarios."</li>
+          <li>"Explain how a browser's back/forward buttons use two stacks."</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;display:flex;gap:14px;flex-wrap:wrap;">
+      <button class="printBtn" onclick="window.print()">🖨 Print / save notes</button>
+      <button class="resetBtn" onclick="resetProgress()">↺ Reset progress</button>
+    </div>
+  </section>
+
+</div>
+
+<footer>INTERACTIVE LEARNING STUDIO · Arrays, Stacks &amp; Queues · Generated tutorial, no external libraries</footer>
+
+<script>
+/* ---------------- utility ---------------- */
+function scrollToId(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+
+let XP = parseInt(localStorage.getItem('ils_xp')||'0');
+function addXP(n){ XP += n; localStorage.setItem('ils_xp', XP); document.getElementById('xpBadge').textContent = XP+' XP'; }
+document.getElementById('xpBadge').textContent = XP+' XP';
+
+/* memory row builders */
+function buildMemRow(container, values){
+  container.innerHTML='';
+  values.forEach((v,i)=>{
+    const c=document.createElement('div');
+    c.className='memCell';
+    c.style.animationDelay=(i*0.06)+'s';
+    c.innerHTML = v + '<small>0x'+(1000+i*4).toString(16)+'</small>';
+    container.appendChild(c);
+  });
+}
+buildMemRow(document.getElementById('heroMem'), [12,7,45,3,9]);
+buildMemRow(document.getElementById('modMem'), [12,7,45,3]);
+
+/* ---------------- Array visualizer ---------------- */
+let arrData = [12,7,45,3];
+function arrRender(){
+  const stage=document.getElementById('arrStage'); stage.innerHTML='';
+  arrData.forEach((v,i)=>{
+    const c=document.createElement('div'); c.className='memCell';
+    c.innerHTML=v+'<small>['+i+']</small>';
+    stage.appendChild(c);
+  });
+}
+arrRender();
+function arrPush(){
+  const inp=document.getElementById('arrInput'); const v=inp.value.trim();
+  if(v===''){return;}
+  arrData.push(v); inp.value=''; arrRender();
+  document.getElementById('arrLog').textContent = 'Pushed "'+v+'" to index '+(arrData.length-1)+' — O(1), no shifting needed.';
+}
+function arrPop(){
+  if(!arrData.length){return;}
+  const v=arrData.pop(); arrRender();
+  document.getElementById('arrLog').textContent = 'Popped "'+v+'" from the end — O(1).';
+}
+function arrInsertStart(){
+  const inp=document.getElementById('arrInput'); const v=inp.value.trim();
+  if(v===''){return;}
+  arrData.unshift(v); inp.value=''; arrRender();
+  document.getElementById('arrLog').textContent = 'Inserted "'+v+'" at index 0 — every other element shifted right, O(n).';
+}
+function arrReset(){ arrData=[12,7,45,3]; arrRender(); document.getElementById('arrLog').textContent='Reset to initial array.'; }
+
+/* ---------------- Stack visualizer ---------------- */
+let stackData = ['A','B'];
+function stackRender(){
+  const stage=document.getElementById('stackStage'); stage.innerHTML='';
+  stackData.forEach((v)=>{
+    const f=document.createElement('div'); f.className='stackFrame'; f.textContent=v;
+    stage.appendChild(f);
+  });
+}
+stackRender();
+function stackPush(){
+  const inp=document.getElementById('stackInput'); const v=inp.value.trim();
+  if(v===''){return;}
+  stackData.push(v); inp.value=''; stackRender();
+  document.getElementById('stackLog').textContent = 'Pushed "'+v+'" — it now sits on top and will be the next one popped.';
+}
+function stackPop(){
+  if(!stackData.length){document.getElementById('stackLog').textContent='Stack is empty — nothing to pop.'; return;}
+  const v=stackData.pop(); stackRender();
+  document.getElementById('stackLog').textContent = 'Popped "'+v+'" — it was the most recently pushed item (LIFO).';
+}
+function stackReset(){ stackData=['A','B']; stackRender(); document.getElementById('stackLog').textContent='Reset.'; }
+
+/* ---------------- Queue visualizer ---------------- */
+let queueData = ['A','B'];
+function queueRender(){
+  const stage=document.getElementById('queueStage'); stage.innerHTML='';
+  queueData.forEach((v)=>{
+    const c=document.createElement('div'); c.className='queueCell'; c.textContent=v;
+    stage.appendChild(c);
+  });
+}
+queueRender();
+function queueEnqueue(){
+  const inp=document.getElementById('queueInput'); const v=inp.value.trim();
+  if(v===''){return;}
+  queueData.push(v); inp.value=''; queueRender();
+  document.getElementById('queueLog').textContent = 'Enqueued "'+v+'" at the back — it waits its turn.';
+}
+function queueDequeue(){
+  if(!queueData.length){document.getElementById('queueLog').textContent='Queue is empty — nothing to dequeue.'; return;}
+  const v=queueData.shift(); queueRender();
+  document.getElementById('queueLog').textContent = 'Dequeued "'+v+'" — it was the first one enqueued (FIFO).';
+}
+function queueReset(){ queueData=['A','B']; queueRender(); document.getElementById('queueLog').textContent='Reset.'; }
+
+/* ---------------- Quiz engine ---------------- */
+const QUIZZES = {
+  1: [
+    {q:'Why is arr[i] considered O(1)?', opts:[
+      'Because arrays are always small','Because the address is computed directly from base + i×size, no searching needed','Because JavaScript caches every index','Because arrays are sorted'
+    ], correct:1, explain:'Reading by index needs no traversal — the exact memory address is computed with one multiplication and one addition.'},
+    {q:'What operation forces a dynamic array to reallocate and copy?', opts:[
+      'Reading the last element','Appending when the array is already at full capacity','Reading the first element','Checking the array length'
+    ], correct:1, explain:'When capacity runs out, the array must allocate a larger block elsewhere and copy every existing element into it — an O(n) event.'},
+    {q:'Inserting an element at index 0 of an array of length n costs:', opts:[
+      'O(1)','O(log n)','O(n), because every element must shift right','O(n²)'
+    ], correct:2, explain:'Every one of the n existing elements must move one slot to the right to make room at the front.'},
+    {q:'Why does array indexing start at 0 rather than 1?', opts:[
+      'Historical convention with no technical reason','Because base + 0×size equals the base address itself','Because 1-based indexing is slower to compute','Because compilers require it'
+    ], correct:1, explain:'Index 0 maps directly onto the base address — it falls naturally out of the address formula, not an arbitrary choice.'}
+  ],
+  2: [
+    {q:'What does LIFO stand for?', opts:['Last In, First Out','Line In, Fast Out','Last In, Final Order','List In, First Out'], correct:0, explain:'LIFO means the most recently added item is the first one removed — exactly how a stack behaves.'},
+    {q:'What is the time complexity of push and pop on an array-backed stack?', opts:['O(n) both','O(1) both, since only the end index changes','O(log n) both','O(1) push, O(n) pop'], correct:1, explain:'Because a stack only ever touches the top (the last index), neither operation requires shifting other elements.'},
+    {q:'A function call stack overflow error usually means:', opts:['Too much memory was allocated for variables','Recursion or nesting went deeper than the reserved call-stack memory allows','The array is completely full of data','A queue was used instead of a stack'], correct:1, explain:'It typically signals missing or incorrect base cases causing unbounded recursive depth, not a data-capacity issue.'},
+    {q:'Which real-world feature is a stack the best natural fit for?', opts:['A printer job queue','A ride-share driver matching system','An "undo" button in a text editor','A round-robin task scheduler'], correct:2, explain:'Undo needs to reverse the most recent action first — exactly LIFO order, which a stack enforces directly.'}
+  ],
+  3: [
+    {q:'What does FIFO stand for?', opts:['First In, First Out','Fast In, Final Out','First In, Final Order','Fixed In, First Out'], correct:0, explain:'FIFO preserves arrival order: whichever item entered first is the first one removed.'},
+    {q:'Why is Array.shift() considered inefficient for a queue dequeue?', opts:['It throws an error on empty arrays','It requires every remaining element to shift left, costing O(n)','It only works on sorted arrays','It cannot remove the first element'], correct:1, explain:'Removing the front element in a plain array forces every remaining element to move down one index.'},
+    {q:'A circular buffer improves a queue by:', opts:['Sorting elements automatically','Allowing enqueue and dequeue to both stay O(1) without shifting','Making the queue infinite in size','Turning the queue into a stack'], correct:1, explain:'Using front/back pointers that wrap around a fixed block avoids the shifting cost entirely.'},
+    {q:'A deque differs from a plain queue because it:', opts:['Only allows removal, never insertion','Allows insertion and removal at both ends','Is always sorted','Cannot be implemented with an array'], correct:1, explain:'A deque generalizes stack and queue behavior by permitting operations at either end.'}
+  ],
+  4: [
+    {q:'Which structure best matches "process requests in the order they arrived, but occasionally let one jump to the very front"?', opts:['Plain stack','Plain array with fixed size','Deque','Plain queue'], correct:2, explain:'A deque allows insertion at the front as well as the back, covering both requirements at once.'},
+    {q:'In the "valid parentheses" problem, why is a stack the right structure?', opts:['Because parentheses must be sorted','Because closing brackets must match the most recently seen unmatched opening bracket — LIFO order','Because it needs random access to any bracket','Because queues cannot hold characters'], correct:1, explain:'Each closing bracket must pair with the nearest unmatched opener, which is exactly what popping the top of a stack gives you.'},
+    {q:'Implementing a queue with two stacks works because:', opts:['Reversing a sequence twice (via two stacks) restores the original order','Stacks are secretly queues internally','It only works for numbers, not strings','Two stacks double the queue capacity'], correct:0, explain:'Moving elements from stack to stack reverses their order; doing it twice returns to the original front-to-back order.'},
+    {q:'Which statement best captures the overall lesson of this module?', opts:['Trees and graphs never use stacks or queues','Choose a structure based on its access pattern, not habit or familiarity','Arrays are obsolete once you learn stacks and queues','Queues are always faster than stacks'], correct:1, explain:'The right structure follows from what access pattern the problem actually needs — random access, nesting, or arrival order.'}
+  ]
+};
+
+function renderQuiz(modNum){
+  const container = document.getElementById('quiz'+modNum+'Items');
+  container.innerHTML='';
+  QUIZZES[modNum].forEach((item, qi)=>{
+    const div = document.createElement('div'); div.className='qItem'; div.dataset.qi=qi; div.dataset.answered='';
+    const qt = document.createElement('div'); qt.className='qText'; qt.textContent=(qi+1)+'. '+item.q;
+    div.appendChild(qt);
+    const opts = document.createElement('div'); opts.className='qOptions';
+    item.opts.forEach((optText, oi)=>{
+      const o = document.createElement('div'); o.className='qOpt'; o.textContent=optText;
+      o.onclick = ()=>selectOption(modNum, qi, oi, o);
+      opts.appendChild(o);
+    });
+    div.appendChild(opts);
+    const ex = document.createElement('div'); ex.className='qExplain'; ex.id='explain-'+modNum+'-'+qi;
+    ex.textContent = item.explain;
+    div.appendChild(ex);
+    container.appendChild(div);
+  });
+}
+[1,2,3,4].forEach(renderQuiz);
+
+const userAnswers = {1:{},2:{},3:{},4:{}};
+
+function selectOption(modNum, qi, oi, el){
+  if(document.getElementById('quiz'+modNum+'Summary').classList.contains('show')) return; // locked after grading
+  const parent = el.parentElement;
+  [...parent.children].forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  userAnswers[modNum][qi] = oi;
+  const answeredCount = Object.keys(userAnswers[modNum]).length;
+  document.getElementById('quiz'+modNum+'Progress').textContent = answeredCount+' / 4 answered';
+}
+
+function gradeQuiz(modNum){
+  const answers = userAnswers[modNum];
+  if(Object.keys(answers).length < 4){
+    alert('Please answer all 4 questions before submitting.');
+    return;
+  }
+  let correctCount = 0;
+  QUIZZES[modNum].forEach((item, qi)=>{
+    const qItem = document.querySelectorAll('#quiz'+modNum+'Items .qItem')[qi];
+    const opts = qItem.querySelectorAll('.qOpt');
+    const chosen = answers[qi];
+    opts.forEach((o, oi)=>{
+      o.style.pointerEvents='none';
+      if(oi === item.correct) o.classList.add('correct');
+      else if(oi === chosen) o.classList.add('incorrect');
+    });
+    document.getElementById('explain-'+modNum+'-'+qi).classList.add('show');
+    if(chosen === item.correct) correctCount++;
+  });
+  const pct = Math.round((correctCount/4)*100);
+  const passed = pct >= 75;
+  const summary = document.getElementById('quiz'+modNum+'Summary');
+  summary.classList.add('show', passed?'pass':'fail');
+  summary.innerHTML = '<div class="big">'+correctCount+' / 4 ('+pct+'%)</div>'
+    + '<div style="color:var(--muted);margin-bottom:10px;">'+(passed? 'Passed — badge earned.' : 'Not quite — review the module and try again.')+'</div>'
+    + (passed ? '<button class="unlockBtn" onclick="unlockNext('+modNum+')">Unlock Module '+(modNum+1<=4?modNum+1:'')+' →</button>'
+               : '<button class="btn" onclick="retryQuiz('+modNum+')">Retry quiz</button>');
+
+  if(passed){
+    addXP(100);
+    const badgeIds=['b1','b2','b3','b4'];
+    document.querySelector('[data-badge="'+badgeIds[modNum-1]+'"]').classList.add('earned');
+    document.querySelectorAll('#dots .railDot')[modNum-1].querySelector('.fillEl').style.setProperty('--fill','100%');
+    document.querySelectorAll('#dots .railDot')[modNum-1].style.setProperty('--fill','100%');
+    localStorage.setItem('ils_mod'+modNum+'_passed','1');
+  }
+}
+
+function retryQuiz(modNum){
+  userAnswers[modNum] = {};
+  document.getElementById('quiz'+modNum+'Summary').classList.remove('show','pass','fail');
+  renderQuiz(modNum);
+  document.getElementById('quiz'+modNum+'Progress').textContent = '0 / 4 answered';
+}
+
+function unlockNext(modNum){
+  if(modNum < 4){
+    const nextMod = document.getElementById('mod'+(modNum+1));
+    nextMod.classList.remove('locked');
+    scrollToId('mod'+(modNum+1));
+  } else {
+    document.getElementById('final').classList.remove('locked');
+    scrollToId('final');
+  }
+}
+
+/* restore progress from localStorage */
+window.addEventListener('load', ()=>{
+  for(let m=1;m<=4;m++){
+    if(localStorage.getItem('ils_mod'+m+'_passed')==='1'){
+      const badgeIds=['b1','b2','b3','b4'];
+      document.querySelector('[data-badge="'+badgeIds[m-1]+'"]').classList.add('earned');
+      document.querySelectorAll('#dots .railDot')[m-1].style.setProperty('--fill','100%');
+      if(m<4) document.getElementById('mod'+(m+1)).classList.remove('locked');
+      else document.getElementById('final').classList.remove('locked');
+    }
+  }
+});
+
+function resetProgress(){
+  if(!confirm('Reset all progress, XP, and badges?')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+document.querySelectorAll('.railDot').forEach(d=>{
+  d.addEventListener('click', ()=> scrollToId(d.dataset.target));
+});
+</script>
+</body>
+</html>
