@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Report — DSA vs Full Stack</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-main:#0f0f14;
+    --bg-card:#1a1a24;
+    --bg-card-alt:#1e1e2e;
+    --text-primary:#f0f0f5;
+    --text-secondary:#8888a0;
+    --accent-green:#34d399;
+    --accent-red:#f87171;
+    --accent-blue:#60a5fa;
+    --accent-gold:#fbbf24;
+    --accent-purple:#a78bfa;
+    --border-subtle:rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg-main);
+    color:var(--text-primary);
+    font-family:'Inter','Segoe UI',system-ui,sans-serif;
+    margin:0;
+    padding:0 16px 40px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  header{
+    padding:32px 8px 20px;
+    text-align:center;
+  }
+  header h1{
+    font-size:28px;font-weight:800;margin:0 0 8px;
+  }
+  header p.sub{
+    font-size:16px;color:var(--text-secondary);margin:0 0 6px;
+  }
+  header p.date{
+    font-size:12px;color:var(--text-secondary);margin:0;
+  }
+  .gradient-line{
+    height:2px;margin-top:18px;border-radius:2px;
+    background:linear-gradient(90deg,var(--accent-blue),var(--accent-purple),var(--accent-gold));
+  }
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--border-subtle);
+    border-radius:16px;
+    padding:28px;
+    margin:28px 0;
+    box-shadow:0 4px 24px rgba(0,0,0,0.3);
+    transition:transform .2s ease;
+    border-left:4px solid var(--accent-blue);
+  }
+  .card:hover{transform:translateY(-2px);}
+  .card h2{
+    font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+    margin:0 0 16px;
+  }
+  .card p, .card li{
+    font-size:15px;line-height:1.7;color:var(--text-primary);
+  }
+  .card ul{padding-left:20px;margin:8px 0;}
+  .label{
+    font-size:12px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;
+  }
+
+  /* Section accents */
+  #s1{border-left-color:var(--accent-blue);}
+  #s1 h2{color:var(--accent-blue);}
+  #s2 h2{color:var(--accent-green);}
+  .option-card{border-left:4px solid var(--accent-green);background:var(--bg-card-alt);border-radius:12px;padding:18px 20px;margin:14px 0;}
+  #s3{border-left-color:var(--accent-purple);}
+  #s3 h2{color:var(--accent-purple);}
+  #s4{border-left-color:var(--accent-blue);}
+  #s4 h2{color:var(--accent-blue);}
+  #s5{border-left-color:var(--accent-red);}
+  #s5 h2{color:var(--accent-red);}
+  #s6{border-left-color:var(--accent-green);}
+  #s6 h2{color:var(--accent-green);}
+  #s7{
+    border-left-color:var(--accent-gold);
+    background:var(--bg-card-alt);
+    padding:36px 28px;
+    box-shadow:0 0 20px rgba(251,191,36,0.15), 0 4px 24px rgba(0,0,0,0.3);
+  }
+  #s7 h2{color:var(--accent-gold);}
+  .winner{
+    font-size:30px;font-weight:800;color:var(--accent-gold);margin:6px 0 14px;
+  }
+  .hard-truth{font-style:italic;color:var(--text-secondary);margin-top:14px;}
+  #s8{border-left-color:var(--accent-gold);}
+  #s8 h2{color:var(--accent-gold);}
+
+  /* Matrix bars */
+  .matrix-row{display:flex;align-items:center;margin:10px 0;gap:12px;}
+  .matrix-label{width:40%;font-size:13px;color:var(--text-secondary);}
+  .bar-container{width:60%;height:28px;background:rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;position:relative;}
+  .bar-fill{
+    height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;
+    padding-right:8px;color:#fff;font-weight:700;font-size:13px;
+    width:0;animation:growBar 0.8s ease-out forwards;
+  }
+  .barA{background:linear-gradient(90deg,#60a5fa,#3b82f6);}
+  .barB{background:linear-gradient(90deg,#34d399,#10b981);}
+  @keyframes growBar{ to { width: var(--target); } }
+  .total-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:16px;padding:12px 14px;border-radius:10px;
+    background:rgba(255,255,255,0.04);font-weight:700;font-size:16px;
+  }
+  .total-row.winner-total{
+    background:rgba(251,191,36,0.12);color:var(--accent-gold);
+  }
+
+  /* Day plan */
+  .day-row{display:flex;gap:10px;margin:8px 0;font-size:14px;}
+  .day-tag{min-width:70px;color:var(--accent-green);font-weight:700;}
+
+  /* Shareable cards */
+  .share-row{display:flex;gap:16px;flex-wrap:wrap;}
+  .mini-card{
+    flex:1 1 200px;background:var(--bg-card-alt);padding:16px;border-radius:12px;
+    display:flex;flex-direction:column;justify-content:space-between;min-height:170px;
+  }
+  .mini-card .mtitle{font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:8px;}
+  .mini-card .watermark{font-size:10px;color:var(--text-secondary);margin-top:10px;text-align:right;opacity:.7;}
+
+  footer{
+    text-align:center;color:var(--text-secondary);font-size:12px;margin-top:40px;
+  }
+
+  @media (max-width:600px){
+    .card{padding:20px 16px;}
+    header h1{font-size:24px;}
+    .matrix-row{flex-direction:column;align-items:stretch;}
+    .matrix-label{width:100%;margin-bottom:4px;}
+    .bar-container{width:100%;}
+    .share-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>DECISION REPORT</h1>
+  <p class="sub">DSA vs Full Stack — Placement Prep Strategy</p>
+  <p class="date">Generated for your 2027 placement season</p>
+  <div class="gradient-line"></div>
+</header>
+
+<!-- SECTION 1 -->
+<div class="card" id="s1">
+  <h2>The Real Decision</h2>
+  <p>This isn't really "DSA vs Full Stack" — it's how to allocate a fixed 12 months across two skills that both matter for a product-company SDE role.</p>
+  <p>The real trade-off: DSA buys you the interview (screening rounds), Full Stack buys you the story (projects, practical credibility). You're afraid of optimizing for one and getting rejected on the other.</p>
+  <p>It's emotionally hard because both feel "necessary" and neither feels safe to under-invest in.</p>
+</div>
+
+<!-- SECTION 2 -->
+<div class="card" id="s2">
+  <h2>The Case For Each Option</h2>
+
+  <div class="option-card">
+    <p class="label">Option A — DSA-First (70/30, your current split)</p>
+    <p><strong>Strongest case:</strong> Product-based companies filter almost entirely on DSA in early rounds — no matter how good your projects are, weak DSA means you don't get to show them.</p>
+    <p><strong>Hidden upside:</strong> Strong DSA also compounds into better system design and cleaner code later — it's a foundational skill, not just an interview hack.</p>
+    <p><strong>Biggest weakness:</strong> If you go too far (90/10+), your projects stay thin, and HR/interviewers may see a resume with no real building experience.</p>
+    <p class="label">Best if you value: cracking the screening round at top product companies</p>
+  </div>
+
+  <div class="option-card" style="border-left-color:var(--accent-purple);">
+    <p class="label">Option B — Full Stack-First</p>
+    <p><strong>Strongest case:</strong> Projects give you talking points, a portfolio, and options outside pure product companies (startups love builders).</p>
+    <p><strong>Hidden upside:</strong> A live, deployed project is one of the few things that makes you memorable in an interview — it's proof, not just claims.</p>
+    <p><strong>Biggest weakness:</strong> If DSA is weak, you may not even reach the round where projects get discussed — most product companies won't ask about your GitHub until after coding rounds.</p>
+    <p class="label">Best if you value: startup optionality and practical, demonstrable skill</p>
+  </div>
+</div>
+
+<!-- SECTION 3 -->
+<div class="card" id="s3">
+  <h2>Assumption Buster</h2>
+  <p class="label">Assumptions you may be making:</p>
+  <ul>
+    <li>That DSA and Full Stack require roughly equal daily hours to "stay sharp" — they don't; DSA needs more frequent practice, Full Stack needs longer uninterrupted blocks.</li>
+    <li>That falling behind in Full Stack for a few months means falling permanently behind — projects can be built quickly in focused bursts, they don't need constant daily attention like DSA does.</li>
+    <li>That service-based/startup routes are a "backup" — some of your best learning opportunities may come from there, not just product companies.</li>
+  </ul>
+  <p class="label">Biases at play:</p>
+  <ul>
+    <li><strong>Loss aversion:</strong> You're more scared of losing out on one path than excited about committing to a plan — this is why 70/30 feels "safe" rather than strategic.</li>
+    <li><strong>Analysis paralysis / false balance bias:</strong> Treating this as a 50/50 dilemma when your own data (interview structure at product companies) suggests it isn't actually balanced.</li>
+  </ul>
+  <p class="label">What you're definitely ignoring:</p>
+  <p>You haven't mentioned a system to actually *measure* whether your 70/30 split is working — no checkpoints, no mock interviews, no milestone project. Without measurement, "FOMO" will keep nagging you regardless of what split you pick.</p>
+</div>
+
+<!-- SECTION 4 -->
+<div class="card" id="s4">
+  <h2>Decision Matrix</h2>
+  <div class="matrix-row">
+    <div class="matrix-label">Life/Career Upside</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:80%;">8</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Financial Safety</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:60%;animation-delay:.1s;">6</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Growth & Learning</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:60%;animation-delay:.2s;">6</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Stress Level (10=low)</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:50%;animation-delay:.3s;">5</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Reversibility</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:90%;animation-delay:.4s;">9</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Long-term Alignment</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:80%;animation-delay:.5s;">8</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Regret Risk (10=low)</div>
+    <div class="bar-container"><div class="bar-fill barA" style="--target:70%;animation-delay:.6s;">7</div></div>
+  </div>
+  <div class="total-row winner-total">
+    <span>Option A — DSA-First (70/30)</span><span>49 / 70</span>
+  </div>
+
+  <div style="height:20px;"></div>
+
+  <div class="matrix-row">
+    <div class="matrix-label">Life/Career Upside</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:50%;">5</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Financial Safety</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:50%;animation-delay:.1s;">5</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Growth & Learning</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:80%;animation-delay:.2s;">8</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Stress Level (10=low)</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:40%;animation-delay:.3s;">4</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Reversibility</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:90%;animation-delay:.4s;">9</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Long-term Alignment</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:60%;animation-delay:.5s;">6</div></div>
+  </div>
+  <div class="matrix-row">
+    <div class="matrix-label">Regret Risk (10=low)</div>
+    <div class="bar-container"><div class="bar-fill barB" style="--target:40%;animation-delay:.6s;">4</div></div>
+  </div>
+  <div class="total-row">
+    <span>Option B — Full Stack-First</span><span>41 / 70</span>
+  </div>
+</div>
+
+<!-- SECTION 5 -->
+<div class="card" id="s5">
+  <h2>Premortem — 12 Months Later, It Failed</h2>
+  <p class="label">Option A (DSA-First) failed because:</p>
+  <ul>
+    <li>You over-corrected to 90/10 and had almost no projects to show in the practical/HR rounds.</li>
+    <li>You never built one solid end-to-end project, so interviewers doubted your applied skill.</li>
+    <li>You burned out on DSA grinding without tracking real progress, losing months to unfocused practice.</li>
+  </ul>
+  <p><strong>Early warning sign:</strong> 2 months in, you still can't describe one project you're proud of.</p>
+  <p><strong>Prevention action:</strong> Lock in one weekend every 3 weeks purely for shipping a Full Stack feature/project.</p>
+
+  <p class="label" style="margin-top:18px;">Option B (Full Stack-First) failed because:</p>
+  <ul>
+    <li>You didn't clear the DSA screening rounds at product companies, so your projects never got seen.</li>
+    <li>Your problem-solving speed lagged behind peers who practiced daily.</li>
+    <li>You spent too much time perfecting projects instead of practicing timed coding.</li>
+  </ul>
+  <p><strong>Early warning sign:</strong> You're not solving DSA problems under timed conditions at least twice a week.</p>
+  <p><strong>Prevention action:</strong> Set a hard floor of daily DSA practice, regardless of project deadlines.</p>
+</div>
+
+<!-- SECTION 6 -->
+<div class="card" id="s6">
+  <h2>7-Day Test Plan</h2>
+  <div class="day-row"><span class="day-tag">Day 1-2</span><span>Audit your current DSA topic coverage and list 3 weak areas + pick one Full Stack project idea to build.</span></div>
+  <div class="day-row"><span class="day-tag">Day 3-4</span><span>Build one small experiment: a mini full-stack feature (auth or CRUD) in a focused 2-day sprint — see how it feels alongside DSA.</span></div>
+  <div class="day-row"><span class="day-tag">Day 5-6</span><span>Talk to a senior/placed student about how their DSA-to-project ratio actually played out in real interviews.</span></div>
+  <div class="day-row"><span class="day-tag">Day 7</span><span>Decision day: if DSA practice felt sustainable and the mini-project got done, keep 70/30; if DSA felt rushed, shift to 60/40.</span></div>
+</div>
+
+<!-- SECTION 7 -->
+<div class="card" id="s7">
+  <h2>The Verdict</h2>
+  <div class="winner">Option A — DSA-First (70/30)</div>
+  <p>It wins because product-based interviews gate almost everything on DSA performance first — your Full Stack skills only matter once you're in the room. Your current split already reflects good instinct.</p>
+  <p><strong>What could flip it:</strong> if you get inbound interest from startups that skip DSA screening and want to see projects directly.</p>
+  <p class="hard-truth">Hard truth: your fear isn't really about the ratio — it's about not having a way to check if it's working, so fix that before you fix the split.</p>
+</div>
+
+<!-- SECTION 8 -->
+<div class="card" id="s8">
+  <h2>Shareable Cards</h2>
+  <div class="share-row">
+    <div class="mini-card">
+      <div class="mtitle">Matrix Summary</div>
+      <p style="font-size:14px;">DSA-First: <strong style="color:var(--accent-blue);">49/70</strong><br>Full Stack-First: <strong style="color:var(--accent-green);">41/70</strong></p>
+      <div class="watermark">Built with Claude AI</div>
+    </div>
+    <div class="mini-card">
+      <div class="mtitle">Verdict</div>
+      <p style="font-size:14px;"><strong style="color:var(--accent-gold);">DSA-First (70/30)</strong><br>Screening rounds gate everything — DSA gets you in the room.</p>
+      <div class="watermark">Built with Claude AI</div>
+    </div>
+    <div class="mini-card">
+      <div class="mtitle">Share Hook</div>
+      <p style="font-size:14px;">"Should you learn DSA or Full Stack for placements? I ran the numbers on my own decision..."<br><br>3 lines: Ran a decision matrix on DSA vs Full Stack. Turns out my gut (70/30) was already right. The real fix wasn't the ratio — it was measuring progress.</p>
+      <div class="watermark">Built with Claude AI</div>
+    </div>
+  </div>
+</div>
+
+<footer>Built with Claude AI | ABTalks 60-Day Challenge</footer>
+</div>
+</body>
+</html>
