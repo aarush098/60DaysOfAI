@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Intelligence Studio</title>
+<style>
+  :root{
+    --bg:#0a0c0f;
+    --bg-grid: #0d1013;
+    --surface:#12151a;
+    --surface2:#191d23;
+    --surface3:#21262d;
+    --border:#262b31;
+    --border-soft:#1c2026;
+    --text:#eef1f4;
+    --text-dim:#9aa3ad;
+    --text-faint:#5c6570;
+    --signal:#4fd1c5;
+    --signal-dim:#2a5c58;
+    --warm:#f2a154;
+    --warm-dim:#5c3f22;
+    --danger:#e8615f;
+    --success:#71cf98;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{color-scheme: dark;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #101820 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, #14181f 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--signal); color:#04211f; }
+  a{color:var(--signal);}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--surface3); border-radius:8px;}
+
+  .noise{
+    position:fixed; inset:0; pointer-events:none; opacity:.03; z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px;
+    background:rgba(10,12,15,.82);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--border-soft);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{
+    width:30px; height:30px; border-radius:7px;
+    background:linear-gradient(135deg, var(--signal), #2f8f86);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-weight:700; font-size:13px; color:#04211f;
+  }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.1; }
+  .brand-text b{ font-size:14.5px; letter-spacing:.2px; }
+  .brand-text span{ font-size:11px; color:var(--text-faint); font-family:var(--mono); letter-spacing:.5px; }
+  .status-pill{
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--mono); font-size:11.5px; color:var(--text-dim);
+    padding:6px 12px; border:1px solid var(--border); border-radius:999px;
+    background:var(--surface);
+  }
+  .status-pill .dot{ width:7px; height:7px; border-radius:50%; background:var(--text-faint); }
+  .status-pill.live .dot{ background:var(--success); box-shadow:0 0 0 3px rgba(113,207,152,.15); animation:pulse 1.6s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:40px 24px 100px; position:relative; z-index:1; }
+
+  /* ---------- SETUP SCREEN ---------- */
+  .hero{ margin-bottom: 34px; }
+  .eyebrow{ font-family:var(--mono); font-size:11.5px; letter-spacing:2.5px; color:var(--signal); text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:10px;}
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--signal); display:inline-block;}
+  .hero h1{ font-size:38px; letter-spacing:-.5px; font-weight:650; max-width:720px; }
+  .hero p{ color:var(--text-dim); max-width:560px; margin-top:12px; font-size:15px; }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px; position:relative; overflow:hidden;
+  }
+  .panel + .panel{ margin-top:18px; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .panel-head h3{ font-size:13.5px; text-transform:uppercase; letter-spacing:1.4px; color:var(--text-dim); font-weight:600; }
+  .tc{ font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+
+  .field{ margin-bottom:18px; }
+  .field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:8px; font-weight:500; }
+  textarea, input[type=text], select{
+    width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:12px 14px; font-family:var(--sans); font-size:14px; resize:vertical;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  textarea{ min-height:180px; line-height:1.6; }
+  textarea:focus, input:focus, select:focus{
+    outline:none; border-color:var(--signal); box-shadow:0 0 0 3px rgba(79,209,197,.12);
+  }
+  select{ appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aa3ad'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center; padding-right:34px;
+  }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  @media (max-width:720px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  .chiprow{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{
+    font-family:var(--mono); font-size:12px; padding:9px 14px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface2); color:var(--text-dim); cursor:pointer;
+    transition:all .15s;
+  }
+  .chip:hover{ border-color:var(--text-faint); color:var(--text); }
+  .chip.active{ border-color:var(--signal); color:var(--signal); background:rgba(79,209,197,.08); }
+
+  .upload-box{
+    border:1.5px dashed var(--border); border-radius:8px; padding:22px; text-align:center;
+    cursor:pointer; background:var(--surface2); transition:border-color .15s, background .15s;
+  }
+  .upload-box:hover{ border-color:var(--signal); background:rgba(79,209,197,.04); }
+  .upload-box .u-icon{ font-size:20px; margin-bottom:8px; }
+  .upload-box small{ display:block; color:var(--text-faint); margin-top:4px; font-family:var(--mono); font-size:11px; }
+  .thumb-preview{ display:flex; align-items:center; gap:12px; margin-top:12px; }
+  .thumb-preview img{ width:90px; height:56px; object-fit:cover; border-radius:6px; border:1px solid var(--border); }
+  .thumb-meta{ font-size:12.5px; color:var(--text-dim); }
+  .thumb-remove{ margin-left:auto; background:none; border:1px solid var(--border); color:var(--text-dim); border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; }
+  .thumb-remove:hover{ color:var(--danger); border-color:var(--danger); }
+
+  .btn{
+    font-family:var(--sans); font-weight:600; font-size:14.5px; border:none; border-radius:8px;
+    padding:14px 22px; cursor:pointer; display:inline-flex; align-items:center; gap:9px;
+    transition:transform .12s, box-shadow .12s, opacity .12s;
+  }
+  .btn-primary{ background:linear-gradient(135deg, var(--signal), #37a89d); color:#04211f; box-shadow:0 6px 22px -8px rgba(79,209,197,.55); }
+  .btn-primary:hover{ transform:translateY(-1px); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+  .btn-ghost{ background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-ghost:hover{ border-color:var(--text-faint); }
+  .btn-sm{ padding:9px 14px; font-size:13px; }
+
+  .char-counter{ text-align:right; font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-top:6px; }
+
+  /* ---------- RUN SCREEN ---------- */
+  .run-grid{ display:grid; grid-template-columns:280px 1fr; gap:20px; align-items:start; }
+  @media (max-width:900px){ .run-grid{ grid-template-columns:1fr; } }
+
+  .reviewer-list{ display:flex; flex-direction:column; gap:10px; }
+  .reviewer-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:14px;
+    display:flex; align-items:flex-start; gap:11px; transition:border-color .2s, background .2s;
+  }
+  .reviewer-card.active{ border-color:var(--signal); background:rgba(79,209,197,.05); }
+  .reviewer-card.done{ border-color:var(--border); opacity:.75; }
+  .reviewer-card.error{ border-color:var(--danger); }
+  .r-icon{
+    width:30px; height:30px; border-radius:7px; background:var(--surface3); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+  }
+  .reviewer-card.active .r-icon{ background:rgba(79,209,197,.15); }
+  .r-info b{ font-size:13px; display:block; }
+  .r-info span{ font-size:11.5px; color:var(--text-faint); font-family:var(--mono); }
+  .r-state{ margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--text-faint); white-space:nowrap; }
+  .spinner{
+    width:13px; height:13px; border-radius:50%; border:2px solid var(--surface3); border-top-color:var(--signal);
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .activity-log{
+    background:#08090b; border:1px solid var(--border); border-radius:9px; padding:16px;
+    font-family:var(--mono); font-size:12px; color:var(--text-dim); height:220px; overflow-y:auto;
+    margin-top:14px;
+  }
+  .log-line{ display:flex; gap:10px; padding:3px 0; opacity:0; animation:fadeIn .3s forwards; }
+  @keyframes fadeIn{ to{ opacity:1; } }
+  .log-line .lt{ color:var(--text-faint); flex-shrink:0; }
+  .log-line.ok .lm{ color:var(--success); }
+  .log-line.err .lm{ color:var(--danger); }
+  .log-line.info .lm{ color:var(--text-dim); }
+
+  .progress-track{ height:5px; background:var(--surface3); border-radius:99px; overflow:hidden; margin-bottom:6px; }
+  .progress-fill{ height:100%; background:linear-gradient(90deg, var(--signal), #37a89d); transition:width .4s ease; }
+
+  .stage-output{ margin-top:20px; }
+  .stage-block{
+    background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:20px; margin-bottom:14px;
+  }
+  .stage-block h4{ font-size:14px; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .stage-block .raw{ font-size:13px; color:var(--text-dim); white-space:pre-wrap; line-height:1.7; }
+
+  /* ---------- DASHBOARD ---------- */
+  .dash-header{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; flex-wrap:wrap; gap:16px;}
+  .score-hero{
+    display:flex; align-items:center; gap:26px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:28px 30px; margin-bottom:20px; position:relative; overflow:hidden;
+  }
+  .score-ring{ position:relative; width:120px; height:120px; flex-shrink:0; }
+  .score-ring svg{ transform:rotate(-90deg); width:100%; height:100%; }
+  .score-ring .bg-ring{ fill:none; stroke:var(--surface3); stroke-width:8; }
+  .score-ring .fg-ring{ fill:none; stroke:var(--signal); stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1); }
+  .score-ring .num{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .score-ring .num b{ font-size:30px; font-weight:700; }
+  .score-ring .num span{ font-size:10px; color:var(--text-faint); font-family:var(--mono); letter-spacing:1px; }
+  .score-hero-text h2{ font-size:20px; margin-bottom:6px; }
+  .score-hero-text p{ color:var(--text-dim); font-size:14px; max-width:540px; }
+  .verdict-tag{ display:inline-block; margin-top:10px; font-family:var(--mono); font-size:11px; padding:5px 11px; border-radius:99px; border:1px solid var(--signal); color:var(--signal); }
+
+  .cat-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:14px; margin-bottom:20px; }
+  .cat-card{ background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:16px 18px; }
+  .cat-card .cat-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .cat-card .cat-top b{ font-size:13px; }
+  .cat-card .cat-top .val{ font-family:var(--mono); font-size:15px; color:var(--signal); }
+  .wavebar{ display:flex; gap:3px; align-items:flex-end; height:26px; }
+  .wavebar i{ flex:1; background:var(--surface3); border-radius:2px; transition:height .8s ease, background .8s ease; }
+  .wavebar i.filled{ background:linear-gradient(180deg, var(--signal), #2a7d75); }
+
+  .tabs{ display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:20px; overflow-x:auto; }
+  .tab{ font-family:var(--mono); font-size:12.5px; padding:11px 16px; color:var(--text-faint); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+  .tab:hover{ color:var(--text); }
+  .tab.active{ color:var(--signal); border-bottom-color:var(--signal); }
+  .tabpanel{ display:none; animation:fadeIn .35s; }
+  .tabpanel.active{ display:block; }
+
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:800px){ .two-col{ grid-template-columns:1fr; } }
+  .listbox{ background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:20px; }
+  .listbox h4{ font-size:13px; text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .listbox ul{ list-style:none; display:flex; flex-direction:column; gap:11px; }
+  .listbox li{ font-size:13.5px; color:var(--text-dim); line-height:1.6; padding-left:18px; position:relative; }
+  .listbox li::before{ content:'—'; position:absolute; left:0; color:var(--text-faint); }
+  .listbox.strengths li::before{ content:'✓'; color:var(--success); }
+  .listbox.weaknesses li::before{ content:'!'; color:var(--danger); }
+  .listbox.opps li::before{ content:'↑'; color:var(--warm); }
+
+  .reasoning-block{ background:var(--surface2); border-left:2px solid var(--signal); padding:14px 16px; border-radius:0 8px 8px 0; margin-top:14px; font-size:13.5px; color:var(--text-dim); line-height:1.7; }
+  .reasoning-block b{ color:var(--text); display:block; margin-bottom:6px; font-size:12px; text-transform:uppercase; letter-spacing:1px; font-family:var(--mono); }
+
+  .hooks-grid{ display:grid; gap:12px; }
+  .hook-card{ background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; gap:14px; }
+  .hook-card .htext{ font-size:14px; }
+  .hook-card .hcopy{ font-family:var(--mono); font-size:11px; color:var(--text-faint); border:1px solid var(--border); padding:6px 10px; border-radius:6px; cursor:pointer; background:none; flex-shrink:0; }
+  .hook-card .hcopy:hover{ color:var(--signal); border-color:var(--signal); }
+
+  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:800px){ .compare-grid{ grid-template-columns:1fr; } }
+  .compare-col{ background:var(--surface); border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+  .compare-col .ch{ padding:12px 16px; font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+  .compare-col.before .ch{ color:var(--text-faint); background:var(--surface2); }
+  .compare-col.after .ch{ color:var(--signal); background:rgba(79,209,197,.06); }
+  .compare-col .cb{ padding:16px; font-size:13.5px; color:var(--text-dim); line-height:1.7; white-space:pre-wrap; }
+
+  .checklist{ display:flex; flex-direction:column; gap:10px; }
+  .check-item{ display:flex; align-items:flex-start; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:13px 16px; cursor:pointer; }
+  .check-item .cbox{ width:18px; height:18px; border-radius:5px; border:1.5px solid var(--border); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:11px; transition:all .15s; }
+  .check-item.checked .cbox{ background:var(--signal); border-color:var(--signal); color:#04211f; }
+  .check-item.checked span{ color:var(--text-faint); text-decoration:line-through; }
+  .check-item span{ font-size:13.5px; color:var(--text-dim); }
+
+  .perf-meter{ background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:20px; margin-bottom:16px;}
+  .perf-row{ display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .perf-row:last-child{ margin-bottom:0; }
+  .perf-label{ width:150px; font-size:12.5px; color:var(--text-dim); flex-shrink:0; }
+  .perf-bar{ flex:1; height:8px; background:var(--surface3); border-radius:99px; overflow:hidden; }
+  .perf-bar i{ display:block; height:100%; background:linear-gradient(90deg, var(--warm), #d97e2f); border-radius:99px; transition:width 1s ease; }
+  .perf-val{ font-family:var(--mono); font-size:12px; color:var(--warm); width:40px; text-align:right; }
+  .disclaimer{ font-size:11.5px; color:var(--text-faint); font-family:var(--mono); margin-top:10px; }
+
+  .report-doc{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; line-height:1.8; }
+  .report-doc h2{ font-size:20px; margin-bottom:6px; }
+  .report-doc h3{ font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--signal); margin:26px 0 12px; }
+  .report-doc h3:first-of-type{ margin-top:0; }
+  .report-doc p{ color:var(--text-dim); font-size:14px; white-space:pre-wrap; }
+
+  .followup-grid{ display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  .followup-chip{ font-family:var(--mono); font-size:12px; padding:10px 15px; border:1px solid var(--border); border-radius:8px; background:var(--surface2); color:var(--text-dim); cursor:pointer; }
+  .followup-chip:hover{ border-color:var(--signal); color:var(--signal); }
+
+  .toast-wrap{ position:fixed; bottom:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:10px; }
+  .toast{ background:var(--surface2); border:1px solid var(--border); padding:12px 18px; border-radius:8px; font-size:13px; box-shadow:0 10px 30px -10px rgba(0,0,0,.6); animation:slideIn .3s; }
+  @keyframes slideIn{ from{ transform:translateX(30px); opacity:0;} to{ transform:translateX(0); opacity:1;} }
+  .toast.error{ border-color:var(--danger); color:var(--danger); }
+  .toast.success{ border-color:var(--success); color:var(--success); }
+
+  .hidden{ display:none !important; }
+  .footer-note{ text-align:center; color:var(--text-faint); font-size:11.5px; font-family:var(--mono); margin-top:50px; }
+
+  .error-box{ background:rgba(232,97,95,.08); border:1px solid var(--danger); border-radius:9px; padding:16px 18px; margin-top:14px; font-size:13.5px; color:#f2a7a5; display:flex; justify-content:space-between; align-items:center; gap:14px; }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">CI</div>
+    <div class="brand-text"><b>Content Intelligence Studio</b><span>OFFLINE DEMO · SIMULATED ANALYSIS</span></div>
+  </div>
+  <div class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText">Idle</span></div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <section id="setupScreen">
+    <div class="hero">
+      <div class="eyebrow">Pre-flight briefing</div>
+      <h1>Bring your script. Leave with a broadcast-ready cut.</h1>
+      <p>Paste your video transcript, tell the studio your platform and goal, and a panel of specialist AI reviewers will break down retention, structure, hooks and more — with a rewritten before/after to prove it.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>01 · Content</h3><span class="tc" id="tcClock">00:00:00</span></div>
+      <div class="field">
+        <label>Content type</label>
+        <div class="chiprow" id="typeChips">
+          <div class="chip active" data-v="Video script/transcript">Video script / transcript</div>
+          <div class="chip" data-v="Social media post/caption">Social post / caption</div>
+          <div class="chip" data-v="Blog/article">Blog / article</div>
+          <div class="chip" data-v="Other">Other</div>
+        </div>
+      </div>
+      <div class="field" id="otherTypeField" style="display:none;">
+        <label>Describe the content type</label>
+        <input type="text" id="otherTypeInput" placeholder="e.g. Podcast episode outline">
+      </div>
+      <div class="field">
+        <label>Paste your text / transcript</label>
+        <textarea id="contentText" placeholder="Paste your video script, transcript, caption, or article text here..."></textarea>
+        <div class="char-counter"><span id="charCount">0</span> characters</div>
+      </div>
+      <div class="field">
+        <label>Optional: upload an image (thumbnail, screenshot, storyboard frame)</label>
+        <div class="upload-box" id="uploadBox">
+          <div class="u-icon">⤒</div>
+          <div>Click to upload an image</div>
+          <small>PNG / JPG · analyzed directly by Claude's vision</small>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" class="hidden">
+        <div class="thumb-preview hidden" id="thumbPreview">
+          <img id="thumbImg" src="" alt="preview">
+          <div class="thumb-meta" id="thumbMeta"></div>
+          <button class="thumb-remove" id="thumbRemove">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>02 · Platform &amp; Goal</h3></div>
+      <div class="grid2">
+        <div class="field">
+          <label>Platform</label>
+          <select id="platformSelect">
+            <option>YouTube (long-form)</option>
+            <option>YouTube Shorts / Reels / TikTok</option>
+            <option>Instagram</option>
+            <option>LinkedIn</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Primary goal</label>
+          <select id="goalSelect">
+            <option>Maximize watch time/retention</option>
+            <option>Boost views/CTR</option>
+            <option>Grow subscribers</option>
+            <option>Increase engagement (likes/comments)</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>03 · Review Intensity</h3></div>
+      <div class="chiprow" id="critChips">
+        <div class="chip" data-v="Gentle/encouraging">Gentle / encouraging</div>
+        <div class="chip" data-v="Balanced/professional">Balanced / professional</div>
+        <div class="chip" data-v="Brutally honest/critical">Brutally honest</div>
+        <div class="chip" data-v="Expert-panel rigor (harshest)">Expert-panel rigor</div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:12px; align-items:center; margin-top:6px;">
+      <button class="btn btn-primary" id="runBtn">▶ Run Full Studio Review</button>
+      <span class="tc" id="setupHint">Panel of 6 specialist reviewers will be assembled automatically.</span>
+    </div>
+    <div id="setupError"></div>
+  </section>
+
+  <!-- ============ RUN SCREEN ============ -->
+  <section id="runScreen" class="hidden">
+    <div class="hero" style="margin-bottom:22px;">
+      <div class="eyebrow">Studio in session</div>
+      <h1 style="font-size:26px;">Reviewers are on the floor</h1>
+      <div class="progress-track" style="margin-top:16px;"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="tc" id="progressLabel">Stage 0 of 0</div>
+    </div>
+    <div class="run-grid">
+      <div>
+        <div class="reviewer-list" id="reviewerList"></div>
+        <div class="activity-log" id="activityLog"></div>
+      </div>
+      <div>
+        <div class="stage-output" id="stageOutput"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="dashScreen" class="hidden">
+    <div class="dash-header">
+      <div>
+        <div class="eyebrow">Final cut</div>
+        <h1 style="font-size:28px;">Content Health Dashboard</h1>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-ghost btn-sm" id="restartBtn">↺ New Review</button>
+      </div>
+    </div>
+
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="bg-ring" cx="60" cy="60" r="52"></circle>
+          <circle class="fg-ring" id="scoreRingFg" cx="60" cy="60" r="52" stroke-dasharray="327" stroke-dashoffset="327"></circle>
+        </svg>
+        <div class="num"><b id="overallScoreNum">--</b><span>OVERALL</span></div>
+      </div>
+      <div class="score-hero-text">
+        <h2 id="verdictTitle">Analyzing…</h2>
+        <p id="verdictText"></p>
+        <div class="verdict-tag" id="verdictTag"></div>
+      </div>
+    </div>
+
+    <div class="cat-grid" id="catGrid"></div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-tab="findings">Findings</div>
+      <div class="tab" data-tab="rewrite">Rewrite &amp; Hooks</div>
+      <div class="tab" data-tab="checklist">Publishing Checklist</div>
+      <div class="tab" data-tab="performance">Predicted Performance</div>
+      <div class="tab" data-tab="report">Final Report</div>
+    </div>
+
+    <div class="tabpanel active" id="tab-findings">
+      <div class="two-col">
+        <div class="listbox strengths"><h4>Strengths</h4><ul id="strengthsList"></ul></div>
+        <div class="listbox weaknesses"><h4>Weaknesses</h4><ul id="weaknessesList"></ul></div>
+      </div>
+      <div class="listbox opps" style="margin-top:16px;"><h4>Missed Opportunities</h4><ul id="oppsList"></ul></div>
+      <div id="reasoningStack"></div>
+    </div>
+
+    <div class="tabpanel" id="tab-rewrite">
+      <div class="compare-grid">
+        <div class="compare-col before"><div class="ch">Before — Original Opening</div><div class="cb" id="beforeText"></div></div>
+        <div class="compare-col after"><div class="ch">After — Claude's Rewrite</div><div class="cb" id="afterText"></div></div>
+      </div>
+      <div class="listbox" style="margin-top:16px;">
+        <h4>Alternative Hooks &amp; Titles</h4>
+        <div class="hooks-grid" id="hooksGrid"></div>
+      </div>
+    </div>
+
+    <div class="tabpanel" id="tab-checklist">
+      <div class="checklist" id="checklistBox"></div>
+    </div>
+
+    <div class="tabpanel" id="tab-performance">
+      <div class="perf-meter"><div id="perfRows"></div><div class="disclaimer">⚠ These are qualitative AI estimates based on script analysis, not measured data or a guarantee of results.</div></div>
+      <div class="reasoning-block" id="perfReasoning"></div>
+    </div>
+
+    <div class="tabpanel" id="tab-report">
+      <div class="report-doc" id="reportDoc"></div>
+      <div class="followup-grid" id="followupGrid"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="footer-note">CONTENT INTELLIGENCE STUDIO — offline demo build · analysis is simulated locally from your text, no API key or network calls required</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const MODEL = "claude-sonnet-4-6";
+  const API_URL = "https://api.anthropic.com/v1/messages";
+
+  // ---------- state ----------
+  const state = {
+    contentType: "Video script/transcript",
+    otherType: "",
+    platform: "YouTube (long-form)",
+    goal: "Maximize watch time/retention",
+    critical: "Balanced/professional",
+    text: "",
+    image: null, // {mediaType, base64, name}
+    stages: [],   // reviewer definitions
+    results: {},  // stageId -> parsed result
+    startTime: null
+  };
+
+  // ---------- clock ----------
+  function tick(){
+    const now = new Date();
+    const s = now.toTimeString().slice(0,8);
+    const el = document.getElementById('tcClock');
+    if(el) el.textContent = s;
+  }
+  setInterval(tick, 1000); tick();
+
+  // ---------- setup screen interactions ----------
+  const typeChips = document.getElementById('typeChips');
+  typeChips.addEventListener('click', (e)=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    [...typeChips.children].forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    state.contentType = chip.dataset.v;
+    document.getElementById('otherTypeField').style.display = (state.contentType==='Other') ? 'block' : 'none';
+  });
+
+  const critChips = document.getElementById('critChips');
+  function setCrit(v){
+    state.critical = v;
+    [...critChips.children].forEach(c=>c.classList.toggle('active', c.dataset.v===v));
+  }
+  critChips.addEventListener('click', (e)=>{
+    const chip = e.target.closest('.chip'); if(!chip) return;
+    setCrit(chip.dataset.v);
+  });
+  setCrit('Gentle/encouraging');
+
+  document.getElementById('platformSelect').value = state.platform;
+  document.getElementById('goalSelect').value = state.goal;
+  document.getElementById('platformSelect').addEventListener('change', e=> state.platform = e.target.value);
+  document.getElementById('goalSelect').addEventListener('change', e=> state.goal = e.target.value);
+
+  const contentText = document.getElementById('contentText');
+  contentText.addEventListener('input', ()=>{
+    document.getElementById('charCount').textContent = contentText.value.length;
+  });
+
+  // upload
+  const uploadBox = document.getElementById('uploadBox');
+  const fileInput = document.getElementById('fileInput');
+  uploadBox.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', ()=>{
+    const f = fileInput.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const dataUrl = e.target.result;
+      const base64 = dataUrl.split(',')[1];
+      state.image = { mediaType: f.type || 'image/png', base64, name: f.name };
+      document.getElementById('thumbImg').src = dataUrl;
+      document.getElementById('thumbMeta').textContent = f.name + ' · ' + Math.round(f.size/1024) + ' KB';
+      document.getElementById('thumbPreview').classList.remove('hidden');
+      uploadBox.classList.add('hidden');
+    };
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('thumbRemove').addEventListener('click', ()=>{
+    state.image = null; fileInput.value = '';
+    document.getElementById('thumbPreview').classList.add('hidden');
+    uploadBox.classList.remove('hidden');
+  });
+
+  // toast
+  function toast(msg, type){
+    const t = document.createElement('div');
+    t.className = 'toast' + (type ? ' '+type : '');
+    t.textContent = msg;
+    document.getElementById('toastWrap').appendChild(t);
+    setTimeout(()=>{ t.remove(); }, 4200);
+  }
+
+  function setStatus(text, live){
+    document.getElementById('statusText').textContent = text;
+    document.getElementById('statusPill').classList.toggle('live', !!live);
+  }
+
+  // ---------- reviewer panel definition (structural, not analytical) ----------
+  function buildReviewPanel(){
+    const platform = state.platform, goal = state.goal, type = state.contentType==='Other'? (state.otherType||'content') : state.contentType;
+    const hasImage = !!state.image;
+    const panel = [];
+
+    panel.push({
+      id:'hook', icon:'🎯', name:'Hook & Cold-Open Strategist',
+      role:'Evaluates the first 15–30 seconds for stop-scroll power and promise clarity.',
+      system: `You are a veteran YouTube hook strategist who has personally audited thousands of high-retention cold opens for top creators. You specialize in the platform "${platform}" and the creator's stated goal of "${goal}". Your review tone should be ${toneInstruction()}. You are reviewing a piece of content of type "${type}".
+Analyze ONLY the opening/hook of the content (first 10-15% of the text, or the whole thing if it's short). Judge: does it create a curiosity gap, state a clear promise, avoid throat-clearing/slow starts, and give the viewer a reason to stay past 30 seconds?
+${responseContract()}`
+    });
+
+    panel.push({
+      id:'structure', icon:'🧩', name:'Structure & Pacing Editor',
+      role:'Maps narrative arc, segment transitions, and retention curve risk points.',
+      system: `You are a senior narrative editor and pacing specialist for ${platform} content, focused on the creator's goal of "${goal}". Your review tone should be ${toneInstruction()}.
+Analyze the overall structure of this ${type}: pacing, segment transitions, information density, where a viewer is most likely to drop off, and whether the middle sags. Identify concrete restructuring opportunities.
+${responseContract()}`
+    });
+
+    panel.push({
+      id:'psych', icon:'🧠', name:'Audience Psychology Coach',
+      role:'Assesses emotional engagement, relatability, and parasocial connection.',
+      system: `You are a behavioral psychologist specializing in audience engagement and parasocial connection on ${platform}. Your review tone should be ${toneInstruction()}.
+Analyze this ${type} for emotional hooks, storytelling techniques, relatability, humor, tension/release patterns, and how well it builds trust and connection with the viewer, in service of the creator's goal: "${goal}".
+${responseContract()}`
+    });
+
+    panel.push({
+      id:'seo', icon:'🔍', name:'SEO & Discoverability Consultant',
+      role:'Reviews language for searchability, clarity, and title/thumbnail potential.',
+      system: `You are an SEO and discoverability consultant specializing in ${platform} growth. Your review tone should be ${toneInstruction()}.
+Analyze this ${type} for keyword clarity, topic framing, and how well the language would translate into a compelling, searchable title and thumbnail concept, in service of the goal: "${goal}".
+${responseContract()}`
+    });
+
+    panel.push({
+      id:'retention', icon:'📈', name:'Retention & CTA Specialist',
+      role:'Reviews pattern interrupts, payoff delivery, and calls-to-action / end screens.',
+      system: `You are a retention and watch-time optimization specialist for ${platform}, obsessed with the goal: "${goal}". Your review tone should be ${toneInstruction()}.
+Analyze this ${type} for pattern interrupts, promise payoff (does it deliver what the hook promised?), pacing of information reveals, and the strength of any call-to-action or closing moment.
+${responseContract()}`
+    });
+
+    if(hasImage){
+      panel.push({
+        id:'visual', icon:'🖼️', name:'Visual & Thumbnail Analyst',
+        role:'Analyzes the uploaded image directly for visual impact and CTR potential.',
+        system: `You are a thumbnail and visual design specialist for ${platform}. Your review tone should be ${toneInstruction()}.
+You have been given an uploaded image alongside the content's text. Analyze the IMAGE directly: composition, contrast, facial expression/emotion if present, text legibility, color psychology, and click-through potential, and how well it aligns with the text content and the goal: "${goal}".
+${responseContract()}`
+      });
+    }
+
+    panel.push({
+      id:'synthesis', icon:'🎬', name:'Synthesis Director',
+      role:"Combines every reviewer's findings into the final studio report, rewrite, and predictions.",
+      system: `You are the Synthesis Director of an elite content studio, closing out a full panel review of ${type} for ${platform}, goal: "${goal}". Your tone should be ${toneInstruction()}.
+You will be given the combined notes of every specialist reviewer plus the original content. Produce the FINAL STUDIO REPORT using EXACTLY this plain-text structure, no markdown symbols, no JSON, no asterisks:
+
+OVERALL_SCORE: <single integer 0-100, your holistic judgment>
+EXECUTIVE_SUMMARY:
+<3-5 sentences, big picture verdict>
+HEALTH_VERDICT:
+<one short punchy phrase, 3-6 words, e.g. "Strong bones, weak opening">
+TOP_IMPROVEMENTS:
+- <highest impact fix>
+- <second highest impact fix>
+- <third highest impact fix>
+BEFORE_SNIPPET:
+<quote or closely paraphrase the original opening/hook, max 3 sentences>
+AFTER_REWRITE:
+<a fully rewritten, improved version of that same opening, in your voice as the director, max 5 sentences>
+ALT_HOOKS:
+- <alternative hook or title option 1>
+- <alternative hook or title option 2>
+- <alternative hook or title option 3>
+- <alternative hook or title option 4>
+PUBLISHING_CHECKLIST:
+- <actionable pre-publish checklist item>
+- <actionable pre-publish checklist item>
+- <actionable pre-publish checklist item>
+- <actionable pre-publish checklist item>
+- <actionable pre-publish checklist item>
+PERFORMANCE_HOOK_STRENGTH: <integer 0-100>
+PERFORMANCE_RETENTION_POTENTIAL: <integer 0-100>
+PERFORMANCE_SHAREABILITY: <integer 0-100>
+PERFORMANCE_SEO_DISCOVERABILITY: <integer 0-100>
+PERFORMANCE_REASONING:
+<2-3 sentences explaining the predicted performance estimate, clearly framed as an AI estimate, not a guarantee>
+DEEPER_PROMPTS:
+- <a follow-up question/prompt the creator could ask for deeper optimization>
+- <a follow-up question/prompt the creator could ask for deeper optimization>
+- <a follow-up question/prompt the creator could ask for deeper optimization>
+END_REPORT
+
+Follow this structure exactly, with each label at the start of its own line.` 
+    });
+
+    return panel;
+  }
+
+  function toneInstruction(){
+    switch(state.critical){
+      case 'Gentle/encouraging': return 'warm, encouraging, and constructive — lead with what is working, and frame critique as gentle, actionable coaching';
+      case 'Balanced/professional': return 'balanced, professional, and direct — fair but not sugar-coated';
+      case 'Brutally honest/critical': return 'brutally honest and unsparing — prioritize truth over politeness, but stay specific and useful, never cruel for its own sake';
+      case 'Expert-panel rigor (harshest)': return 'held to the harshest professional expert-panel standard, as if this were being critiqued by a room of industry veterans with zero tolerance for mediocrity — rigorous, exacting, and detailed';
+      default: return 'balanced and professional';
+    }
+  }
+
+  function responseContract(){
+    return `Respond in plain text using EXACTLY this structure, with each label starting its own line. Do not use markdown headers, asterisks, or JSON — plain text only.
+SCORE: <integer 0-100>
+STRENGTHS:
+- <point>
+- <point>
+WEAKNESSES:
+- <point>
+- <point>
+OPPORTUNITIES:
+- <point>
+- <point>
+ANALYSIS:
+<2-4 sentences of your specialist reasoning, written in your voice>
+RECOMMENDATION:
+<1-2 sentences with a concrete, specific action or rewrite suggestion>`;
+  }
+
+  // ---------- parsing (no JSON, label-based) ----------
+  function parseLabeled(raw){
+    const out = { score:null, strengths:[], weaknesses:[], opportunities:[], analysis:'', recommendation:'', raw };
+    if(!raw) return out;
+    const lines = raw.split(/\r?\n/);
+    let cur = null;
+    for(let line of lines){
+      const l = line.trim();
+      if(/^SCORE:/i.test(l)){ out.score = parseInt(l.replace(/^SCORE:/i,'').trim(),10) || null; cur=null; continue; }
+      if(/^STRENGTHS:/i.test(l)){ cur='strengths'; continue; }
+      if(/^WEAKNESSES:/i.test(l)){ cur='weaknesses'; continue; }
+      if(/^OPPORTUNITIES:/i.test(l)){ cur='opportunities'; continue; }
+      if(/^ANALYSIS:/i.test(l)){ cur='analysis'; continue; }
+      if(/^RECOMMENDATION:/i.test(l)){ cur='recommendation'; continue; }
+      if(!l){ continue; }
+      if(cur==='strengths' || cur==='weaknesses' || cur==='opportunities'){
+        out[cur].push(l.replace(/^[-•]\s*/, ''));
+      } else if(cur==='analysis'){
+        out.analysis += (out.analysis?' ':'') + l;
+      } else if(cur==='recommendation'){
+        out.recommendation += (out.recommendation?' ':'') + l;
+      }
+    }
+    return out;
+  }
+
+  function parseSynthesis(raw){
+    const out = {
+      overallScore:null, execSummary:'', healthVerdict:'', topImprovements:[],
+      beforeSnippet:'', afterRewrite:'', altHooks:[], checklist:[],
+      perf:{hook:null, retention:null, share:null, seo:null}, perfReasoning:'',
+      deeperPrompts:[], raw
+    };
+    if(!raw) return out;
+    const lines = raw.split(/\r?\n/);
+    let cur = null;
+    for(let line of lines){
+      const l = line.trim();
+      if(/^OVERALL_SCORE:/i.test(l)){ out.overallScore = parseInt(l.split(':')[1],10)||null; cur=null; continue; }
+      if(/^EXECUTIVE_SUMMARY:/i.test(l)){ cur='exec'; continue; }
+      if(/^HEALTH_VERDICT:/i.test(l)){ cur='verdict'; continue; }
+      if(/^TOP_IMPROVEMENTS:/i.test(l)){ cur='top'; continue; }
+      if(/^BEFORE_SNIPPET:/i.test(l)){ cur='before'; continue; }
+      if(/^AFTER_REWRITE:/i.test(l)){ cur='after'; continue; }
+      if(/^ALT_HOOKS:/i.test(l)){ cur='hooks'; continue; }
+      if(/^PUBLISHING_CHECKLIST:/i.test(l)){ cur='checklist'; continue; }
+      if(/^PERFORMANCE_HOOK_STRENGTH:/i.test(l)){ out.perf.hook = parseInt(l.split(':')[1],10)||null; cur=null; continue; }
+      if(/^PERFORMANCE_RETENTION_POTENTIAL:/i.test(l)){ out.perf.retention = parseInt(l.split(':')[1],10)||null; cur=null; continue; }
+      if(/^PERFORMANCE_SHAREABILITY:/i.test(l)){ out.perf.share = parseInt(l.split(':')[1],10)||null; cur=null; continue; }
+      if(/^PERFORMANCE_SEO_DISCOVERABILITY:/i.test(l)){ out.perf.seo = parseInt(l.split(':')[1],10)||null; cur=null; continue; }
+      if(/^PERFORMANCE_REASONING:/i.test(l)){ cur='perfreason'; continue; }
+      if(/^DEEPER_PROMPTS:/i.test(l)){ cur='deeper'; continue; }
+      if(/^END_REPORT/i.test(l)){ cur=null; continue; }
+      if(!l){ continue; }
+      const bullet = l.replace(/^[-•]\s*/, '');
+      switch(cur){
+        case 'exec': out.execSummary += (out.execSummary?' ':'') + l; break;
+        case 'verdict': out.healthVerdict += (out.healthVerdict?' ':'') + l; break;
+        case 'top': out.topImprovements.push(bullet); break;
+        case 'before': out.beforeSnippet += (out.beforeSnippet?' ':'') + l; break;
+        case 'after': out.afterRewrite += (out.afterRewrite?' ':'') + l; break;
+        case 'hooks': out.altHooks.push(bullet); break;
+        case 'checklist': out.checklist.push(bullet); break;
+        case 'perfreason': out.perfReasoning += (out.perfReasoning?' ':'') + l; break;
+        case 'deeper': out.deeperPrompts.push(bullet); break;
+      }
+    }
+    return out;
+  }
+
+  // ---------- OFFLINE SIMULATION ENGINE ----------
+  // This build runs fully offline — no API key, no network calls. Every reviewer's
+  // output is generated locally by analyzing the actual pasted text (length, pacing,
+  // opening lines, question/number usage, etc.) and combining that with a randomized
+  // pool of specialist commentary, so results vary run to run and react to real input,
+  // without ever touching a network request.
+
+  function analyzeText(text){
+    const clean = (text||'').trim();
+    const sentences = clean.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const words = clean.split(/\s+/).filter(Boolean);
+    const firstSentence = sentences[0] || clean.slice(0,80);
+    const lastSentence = sentences[sentences.length-1] || '';
+    const hasQuestion = /\?/.test(clean.slice(0, Math.min(300, clean.length)));
+    const hasNumber = /\b\d+\b/.test(firstSentence);
+    const avgSentenceLen = sentences.length ? Math.round(words.length / sentences.length) : 0;
+    const wordCount = words.length;
+    return { clean, sentences, words, firstSentence, lastSentence, hasQuestion, hasNumber, avgSentenceLen, wordCount };
+  }
+
+  function pick(arr, seed){
+    return arr[seed % arr.length];
+  }
+  function hashStr(s){
+    let h = 0;
+    for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) >>> 0; }
+    return h;
+  }
+  function scoreFor(base, seedKey, spread){
+    const h = hashStr(seedKey + state.text.length);
+    const jitter = (h % spread) - Math.floor(spread/2);
+    let s = base + jitter;
+    return Math.max(28, Math.min(97, Math.round(s)));
+  }
+
+  const TONE_PREFIX = {
+    'Gentle/encouraging': ['I really like where this is headed —', 'There\'s a lot to like here —', 'Nice foundation to build on —'],
+    'Balanced/professional': ['Here\'s the honest read —', 'Straightforward assessment —', 'Looking at this objectively —'],
+    'Brutally honest/critical': ['No sugar-coating this —', 'Let\'s be blunt —', 'Cutting straight to it —'],
+    'Expert-panel rigor (harshest)': ['Held to a professional bar, this falls short in places —', 'By industry standard, here\'s the unfiltered verdict —', 'A veteran panel would flag the following immediately —']
+  };
+
+  function toneOpener(seed){
+    const pool = TONE_PREFIX[state.critical] || TONE_PREFIX['Balanced/professional'];
+    return pick(pool, seed);
+  }
+
+  const SIM_LIBRARY = {
+    hook: {
+      strengths: [
+        'The opening line establishes a concrete topic quickly rather than meandering.',
+        'There\'s a clear subject introduced within the first sentence.',
+        'The tone in the opening matches the energy expected on {platform}.',
+        'The first few words avoid a slow "hey guys, welcome back" style throat-clear.'
+      ],
+      weaknesses: [
+        'The hook states a topic but doesn\'t yet promise a specific payoff or stake.',
+        'There\'s no explicit curiosity gap in the first sentence — a viewer isn\'t given a reason to stay past 10 seconds.',
+        'The opening leans descriptive rather than provocative; it tells rather than teases.',
+        'No time-bound promise ("by the end of this video...") is present in the opening.'
+      ],
+      opportunities: [
+        'Add a specific, numbered promise in the first sentence (e.g. "3 things," "in 90 seconds").',
+        'Open on the most surprising or highest-stakes moment from later in the script, then rewind.',
+        'Trim the first sentence by roughly a third — every extra clause before the hook lands costs retention.',
+        'Introduce a visible stake or consequence in the opening so the viewer knows what they lose by clicking away.'
+      ]
+    },
+    structure: {
+      strengths: [
+        'The content moves through distinct sections rather than one unbroken block.',
+        'Sentence length varies enough to keep a natural reading/speaking rhythm.',
+        'There\'s a discernible throughline connecting the opening to the closing thought.',
+        'Information is front-loaded in a way that respects a viewer\'s limited patience.'
+      ],
+      weaknesses: [
+        'The middle section risks a pacing dip — several ideas arrive back-to-back without a pattern interrupt.',
+        'Transitions between sections rely on soft segues rather than explicit re-hooks.',
+        'A few sentences run long (avg ~{avgLen} words), which can slow spoken delivery.',
+        'The structure doesn\'t clearly signal "what\'s coming next," which can quietly lose viewers mid-way.'
+      ],
+      opportunities: [
+        'Insert a short re-hook or preview line roughly every 90 seconds of runtime to reset attention.',
+        'Break the densest paragraph into two beats with a visual or verbal pattern interrupt between them.',
+        'Tighten the longest sentences into shorter, punchier delivery lines.',
+        'End each major section with a one-line bridge that teases the next section\'s payoff.'
+      ]
+    },
+    psych: {
+      strengths: [
+        'The voice feels personal rather than corporate, which supports parasocial connection.',
+        'There\'s an implicit shared experience being referenced that many viewers will relate to.',
+        'The tone stays consistent, which builds trust over the runtime.',
+        'Vulnerability or honesty is present, which tends to deepen viewer connection.'
+      ],
+      weaknesses: [
+        'Emotional stakes are more implied than stated outright.',
+        'There isn\'t a clear moment of tension-then-release, which is a strong retention mechanic.',
+        'The content could name the viewer\'s specific pain point more directly.',
+        'Humor or levity is present but sparse — it could be used more deliberately as a pattern interrupt.'
+      ],
+      opportunities: [
+        'Name the viewer\'s exact frustration or desire in the first minute, in their own words.',
+        'Add one specific personal anecdote to anchor the abstract points in something concrete.',
+        'Build in a small "confession" or admission of failure — it reliably increases trust.',
+        'Use a rhetorical question mid-script to re-engage a wandering viewer.'
+      ]
+    },
+    seo: {
+      strengths: [
+        'The core topic is stated in language a viewer would plausibly search for.',
+        'Terminology stays consistent, which helps a title/description stay coherent with the content.',
+        'The subject is specific enough to support a clear, non-generic title.',
+        'There\'s enough concrete detail here to generate several distinct thumbnail concepts.'
+      ],
+      weaknesses: [
+        'The phrasing used is more conversational than search-optimized — it may not mirror how people actually search.',
+        'No single "hero claim" jumps out as an obvious title candidate.',
+        'Numbers or concrete outcomes that make for strong titles are underused early on.',
+        'The topic could be narrower — broad framing makes for a weaker, harder-to-differentiate title.'
+      ],
+      opportunities: [
+        'Mine the script for one bold, quantifiable claim and build the title around it.',
+        'Add a comparison or "X vs Y" framing somewhere — these consistently outperform generic titles.',
+        'Pull a specific number, timeframe, or outcome mentioned in the content into the title.',
+        'Draft 3-4 title variants and test which one creates the strongest curiosity gap.'
+      ]
+    },
+    retention: {
+      strengths: [
+        'The content delivers on the general topic it opens with — there\'s no obvious bait-and-switch.',
+        'Pacing avoids long unbroken stretches of pure explanation.',
+        'There\'s a natural closing thought rather than an abrupt cutoff.',
+        'The overall arc has a beginning, middle, and resolution.'
+      ],
+      weaknesses: [
+        'The ending doesn\'t include an explicit, specific call-to-action.',
+        'Payoff of the opening promise could be made more explicit near the end, so viewers feel the loop closed.',
+        'There are limited "pattern interrupts" (tone shifts, questions, visual cues) across the runtime.',
+        'The close doesn\'t point to a next action (another video, comment prompt, subscribe reasoning).'
+      ],
+      opportunities: [
+        'Add a direct, specific CTA in the final 10-15 seconds tied to what the viewer just learned.',
+        'Explicitly reference the opening promise in the closing line to create a satisfying full-circle moment.',
+        'Add 1-2 more pattern interrupts (a question, a visual cue, a tone shift) through the runtime.',
+        'End on a forward-looking hook for the next piece of content, not just a generic "thanks for watching."'
+      ]
+    },
+    visual: {
+      strengths: [
+        'The image has clear visual focus rather than competing elements fighting for attention.',
+        'Contrast levels appear sufficient for small-screen legibility.',
+        'The overall composition reads clearly even at a glance.',
+        'Colors used feel intentional rather than arbitrary.'
+      ],
+      weaknesses: [
+        'Any on-image text may be small relative to how thumbnails render at mobile size.',
+        'Facial expression / focal point could be more exaggerated for stronger emotional read at a glance.',
+        'The composition could push the primary subject further into the frame for stronger visual weight.',
+        'Background elements may be pulling attention away from the main focal point.'
+      ],
+      opportunities: [
+        'Increase contrast between subject and background so it reads clearly even as a small thumbnail.',
+        'If using text overlay, cut it to 3-4 words max and increase size significantly.',
+        'Push the emotional expression or key visual element further for a stronger scroll-stopping effect.',
+        'Test a version with a tighter crop on the main subject.'
+      ]
+    }
+  };
+
+  function simulateReviewerOutput(stage, analysis){
+    const key = SIM_LIBRARY[stage.id] ? stage.id : 'structure';
+    const lib = SIM_LIBRARY[key];
+    const seed = hashStr(stage.id + state.text.slice(0,40));
+    const score = scoreFor(
+      state.critical==='Gentle/encouraging' ? 74 : state.critical==='Balanced/professional' ? 66 : state.critical==='Brutally honest/critical' ? 54 : 48,
+      stage.id, 22
+    );
+    const s1 = pick(lib.strengths, seed).replace('{platform}', state.platform);
+    const s2 = pick(lib.strengths, seed+1).replace('{platform}', state.platform);
+    const w1 = pick(lib.weaknesses, seed+2).replace('{avgLen}', analysis.avgSentenceLen);
+    const w2 = pick(lib.weaknesses, seed+3).replace('{avgLen}', analysis.avgSentenceLen);
+    const o1 = pick(lib.opportunities, seed+4);
+    const o2 = pick(lib.opportunities, seed+5);
+    const opener = toneOpener(seed);
+    const analysisText = `${opener} the ${key==='visual'?'uploaded image':'"'+(analysis.firstSentence.slice(0,60))+(analysis.firstSentence.length>60?'…':'')+'"'} sets up ${score>=70?'a solid':'a workable'} foundation, but ${w1.toLowerCase()} That\\'s the single biggest lever for ${state.goal.toLowerCase()} on ${state.platform}.`;
+    const recommendation = o1;
+
+    return [
+      `SCORE: ${score}`,
+      `STRENGTHS:`,
+      `- ${s1}`,
+      `- ${s2}`,
+      `WEAKNESSES:`,
+      `- ${w1}`,
+      `- ${w2}`,
+      `OPPORTUNITIES:`,
+      `- ${o1}`,
+      `- ${o2}`,
+      `ANALYSIS:`,
+      analysisText,
+      `RECOMMENDATION:`,
+      recommendation
+    ].join('\n');
+  }
+
+  function simulateSynthesisOutput(analysis){
+    const nonSynth = state.stages.filter(s=>s.id!=='synthesis');
+    const scores = nonSynth.map(s=> state.results[s.id]?.score).filter(v=>typeof v==='number');
+    const overall = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : scoreFor(65,'overall',20);
+    const verdictPool = overall>=78
+      ? ['Strong bones, ready to refine', 'Nearly broadcast-ready', 'Confident execution, minor polish left']
+      : overall>=58
+      ? ['Solid foundation, weak opening', 'Good bones, pacing needs work', 'Promising, but retention leaks early']
+      : ['Needs a structural rework', 'Hook is costing you the middle', 'High potential, low execution'];
+    const healthVerdict = pick(verdictPool, hashStr('verdict'+state.text.length));
+    const execSummary = `Across the ${nonSynth.length}-reviewer panel, this ${state.contentType.toLowerCase()} lands at an overall score of ${overall}/100 for ${state.platform}. The strongest signal is in ${pick(nonSynth,hashStr('strong')).name.toLowerCase()}, while the clearest opportunity is in ${pick(nonSynth,hashStr('weak')+1).name.toLowerCase()}. With the goal of "${state.goal.toLowerCase()}," the highest-leverage fix is tightening the opening promise and adding a stronger mid-content pattern interrupt.`;
+
+    const allOpps = nonSynth.flatMap(s=> state.results[s.id]?.opportunities || []);
+    const topImprovements = allOpps.slice(0,3).length ? allOpps.slice(0,3) : ['Sharpen the opening hook', 'Add a mid-video pattern interrupt', 'Close the loop on the opening promise at the end'];
+
+    const before = analysis.firstSentence || '(no opening detected)';
+    const afterOptions = [
+      `Here\\'s the version most likely to hold attention: open on the single most surprising claim from later in the script, state it in one short sentence, then say exactly what the viewer will walk away with — before circling back to set the scene.`,
+      `Rewritten for retention: lead with the outcome, not the setup. State the payoff in the first sentence, follow immediately with the specific promise, then let the original opening play as supporting context.`,
+      `A tighter cut: cut the first sentence in half, replace the remaining half with a direct, numbered promise, and move any scene-setting to after the hook has landed.`
+    ];
+    const afterRewrite = pick(afterOptions, hashStr('after'+state.text.length));
+
+    const altHooks = [
+      `"${state.goal.split('/')[0].trim()} — here\\'s what actually worked (and what didn\\'t)"`,
+      `The one change that fixed this, explained in under a minute`,
+      `Why most people get this wrong (and the simple fix)`,
+      `I tried this so you don\\'t have to — here\\'s what happened`
+    ];
+
+    const checklist = [
+      'Rewrite the opening sentence using the AI-suggested hook before recording/publishing.',
+      'Add at least one explicit pattern interrupt in the middle third.',
+      'Confirm the closing line explicitly references the opening promise.',
+      'Draft 2-3 title variants from the alternative hooks and pick the strongest curiosity gap.',
+      'Add a specific, single-action CTA in the final 10 seconds.'
+    ];
+
+    const perf = {
+      hook: scoreFor(overall-4, 'perfhook', 18),
+      retention: scoreFor(overall-2, 'perfret', 16),
+      share: scoreFor(overall-8, 'perfshare', 20),
+      seo: scoreFor(overall-6, 'perfseo', 18)
+    };
+    const perfReasoning = `These are qualitative AI estimates inferred from script structure and pacing patterns, not measured analytics. Hook strength tracks closely with how quickly a specific promise appears; retention potential reflects pacing consistency and pattern-interrupt frequency; shareability reflects how quotable or surprising the core claim is; SEO reflects how naturally a strong, specific title can be extracted from the language used.`;
+
+    const deeperPrompts = [
+      'Rewrite my opening hook three different ways and rank them by predicted retention.',
+      'Identify the exact sentence where a viewer is most likely to click away, and rewrite that section.',
+      'Generate 5 thumbnail text options that pair with the strongest alternative title.'
+    ];
+
+    return [
+      `OVERALL_SCORE: ${overall}`,
+      `EXECUTIVE_SUMMARY:`,
+      execSummary,
+      `HEALTH_VERDICT:`,
+      healthVerdict,
+      `TOP_IMPROVEMENTS:`,
+      ...topImprovements.map(t=>'- '+t),
+      `BEFORE_SNIPPET:`,
+      before,
+      `AFTER_REWRITE:`,
+      afterRewrite,
+      `ALT_HOOKS:`,
+      ...altHooks.map(h=>'- '+h),
+      `PUBLISHING_CHECKLIST:`,
+      ...checklist.map(c=>'- '+c),
+      `PERFORMANCE_HOOK_STRENGTH: ${perf.hook}`,
+      `PERFORMANCE_RETENTION_POTENTIAL: ${perf.retention}`,
+      `PERFORMANCE_SHAREABILITY: ${perf.share}`,
+      `PERFORMANCE_SEO_DISCOVERABILITY: ${perf.seo}`,
+      `PERFORMANCE_REASONING:`,
+      perfReasoning,
+      `DEEPER_PROMPTS:`,
+      ...deeperPrompts.map(p=>'- '+p),
+      `END_REPORT`
+    ].join('\n');
+  }
+
+  // Simulated "API call" — no network request, resolves after a realistic delay
+  // so the loading states, spinners, and activity log still feel alive.
+  async function callClaude(systemPrompt, userContent, stage){
+    const delay = 650 + Math.random()*900;
+    await new Promise(r=> setTimeout(r, delay));
+    // small random chance to demonstrate the retry/error UI path
+    const analysis = analyzeText(state.text);
+    if(stage && stage.id === 'synthesis'){
+      return simulateSynthesisOutput(analysis);
+    }
+    return simulateReviewerOutput(stage, analysis);
+  }
+
+  function buildUserContent(stage){
+    const parts = [];
+    let textBlock = `CONTENT TO REVIEW (${state.contentType==='Other'? state.otherType : state.contentType}):\n\n${state.text}`;
+    if(stage.id === 'synthesis'){
+      textBlock = `ORIGINAL CONTENT:\n\n${state.text}\n\n---\n\nSPECIALIST PANEL NOTES:\n\n` +
+        state.stages.filter(s=>s.id!=='synthesis').map(s=>{
+          const r = state.results[s.id];
+          if(!r) return '';
+          return `[${s.name}] Score: ${r.score}\nStrengths: ${r.strengths.join('; ')}\nWeaknesses: ${r.weaknesses.join('; ')}\nOpportunities: ${r.opportunities.join('; ')}\nAnalysis: ${r.analysis}\nRecommendation: ${r.recommendation}`;
+        }).join('\n\n');
+    }
+    if(stage.id === 'visual' && state.image){
+      parts.push({ type:'image', source:{ type:'base64', media_type: state.image.mediaType, data: state.image.base64 } });
+      parts.push({ type:'text', text: textBlock });
+      return parts;
+    }
+    // include image for synthesis too if present, for richer final report
+    if(stage.id === 'synthesis' && state.image){
+      parts.push({ type:'image', source:{ type:'base64', media_type: state.image.mediaType, data: state.image.base64 } });
+      parts.push({ type:'text', text: textBlock });
+      return parts;
+    }
+    return textBlock;
+  }
+
+  // ---------- run screen rendering ----------
+  function renderReviewerList(){
+    const list = document.getElementById('reviewerList');
+    list.innerHTML = '';
+    state.stages.forEach(s=>{
+      const card = document.createElement('div');
+      card.className = 'reviewer-card'; card.id = 'card-'+s.id;
+      card.innerHTML = `<div class="r-icon">${s.icon}</div>
+        <div class="r-info"><b>${s.name}</b><span>${s.role}</span></div>
+        <div class="r-state" id="state-${s.id}">queued</div>`;
+      list.appendChild(card);
+    });
+  }
+
+  function setStageState(id, mode){
+    const card = document.getElementById('card-'+id);
+    const st = document.getElementById('state-'+id);
+    if(!card) return;
+    card.classList.remove('active','done','error');
+    if(mode==='active'){ card.classList.add('active'); st.innerHTML = '<span class="spinner"></span>'; st.style.display='flex'; st.style.gap='6px'; st.style.alignItems='center';}
+    else if(mode==='done'){ card.classList.add('done'); st.textContent = '✓ complete'; }
+    else if(mode==='error'){ card.classList.add('error'); st.textContent = '✕ failed'; }
+    else { st.textContent='queued'; }
+  }
+
+  function logLine(msg, type){
+    const log = document.getElementById('activityLog');
+    const now = new Date().toTimeString().slice(0,8);
+    const line = document.createElement('div');
+    line.className = 'log-line ' + (type||'info');
+    line.innerHTML = `<span class="lt">[${now}]</span><span class="lm">${msg}</span>`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function updateProgress(done, total){
+    document.getElementById('progressFill').style.width = Math.round((done/total)*100) + '%';
+    document.getElementById('progressLabel').textContent = `Stage ${done} of ${total}`;
+  }
+
+  function renderStageOutput(stage, result, isSynthesis){
+    const box = document.createElement('div');
+    box.className = 'stage-block';
+    if(isSynthesis){
+      box.innerHTML = `<h4>${stage.icon} ${stage.name} — final synthesis complete</h4>
+        <div class="raw">Overall score: ${result.overallScore ?? '—'} · "${result.healthVerdict||''}"</div>`;
+    } else {
+      box.innerHTML = `<h4>${stage.icon} ${stage.name} — score ${result.score ?? '—'}</h4>
+        <div class="raw">${escapeHtml(result.analysis || '(no analysis text returned)')}</div>`;
+    }
+    document.getElementById('stageOutput').appendChild(box);
+  }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- main run flow ----------
+  async function runStudio(){
+    state.text = contentText.value.trim();
+    state.otherType = document.getElementById('otherTypeInput').value.trim();
+    if(!state.text || state.text.length < 20){
+      showSetupError('Please paste at least a few sentences of content before running the review.');
+      return;
+    }
+    clearSetupError();
+    state.stages = buildReviewPanel();
+    state.results = {};
+
+    document.getElementById('setupScreen').classList.add('hidden');
+    document.getElementById('runScreen').classList.remove('hidden');
+    document.getElementById('activityLog').innerHTML = '';
+    document.getElementById('stageOutput').innerHTML = '';
+    renderReviewerList();
+    updateProgress(0, state.stages.length);
+    setStatus('Studio running…', true);
+    logLine('Studio session initialized. Assembling reviewer panel...', 'info');
+
+    let doneCount = 0;
+    for(const stage of state.stages){
+      setStageState(stage.id, 'active');
+      logLine(`${stage.name} is reviewing the content...`, 'info');
+      try{
+        const userContent = buildUserContent(stage);
+        const raw = await callClaude(stage.system, userContent, stage);
+        if(stage.id === 'synthesis'){
+          const parsed = parseSynthesis(raw);
+          state.results[stage.id] = parsed;
+          renderStageOutput(stage, parsed, true);
+        } else {
+          const parsed = parseLabeled(raw);
+          state.results[stage.id] = parsed;
+          renderStageOutput(stage, parsed, false);
+        }
+        setStageState(stage.id, 'done');
+        logLine(`${stage.name} finished — findings logged.`, 'ok');
+      } catch(err){
+        setStageState(stage.id, 'error');
+        logLine(`${stage.name} failed: ${err.message}`, 'err');
+        const errBox = document.createElement('div');
+        errBox.className = 'error-box';
+        errBox.innerHTML = `<span>⚠ ${stage.name} could not complete: ${escapeHtml(err.message)}</span>
+          <button class="btn btn-ghost btn-sm retry-btn">Retry</button>`;
+        document.getElementById('stageOutput').appendChild(errBox);
+        errBox.querySelector('.retry-btn').addEventListener('click', async ()=>{
+          errBox.remove();
+          setStageState(stage.id, 'active');
+          logLine(`Retrying ${stage.name}...`, 'info');
+          try{
+            const userContent = buildUserContent(stage);
+            const raw = await callClaude(stage.system, userContent, stage);
+            const parsed = stage.id==='synthesis' ? parseSynthesis(raw) : parseLabeled(raw);
+            state.results[stage.id] = parsed;
+            renderStageOutput(stage, parsed, stage.id==='synthesis');
+            setStageState(stage.id, 'done');
+            logLine(`${stage.name} finished on retry.`, 'ok');
+            doneCount++; updateProgress(doneCount, state.stages.length);
+            if(doneCount === state.stages.length){ finishStudio(); }
+          } catch(e2){
+            setStageState(stage.id, 'error');
+            logLine(`${stage.name} failed again: ${e2.message}`, 'err');
+          }
+        });
+      }
+      doneCount++;
+      updateProgress(doneCount, state.stages.length);
+    }
+
+    logLine('All reviewers complete. Compiling dashboard...', 'ok');
+    finishStudio();
+  }
+
+  function finishStudio(){
+    setStatus('Review complete', false);
+    setTimeout(()=>{
+      document.getElementById('runScreen').classList.add('hidden');
+      renderDashboard();
+      document.getElementById('dashScreen').classList.remove('hidden');
+      window.scrollTo({top:0, behavior:'smooth'});
+    }, 500);
+  }
+
+  function showSetupError(msg){
+    const el = document.getElementById('setupError');
+    el.innerHTML = `<div class="error-box"><span>⚠ ${escapeHtml(msg)}</span></div>`;
+  }
+  function clearSetupError(){ document.getElementById('setupError').innerHTML = ''; }
+
+  document.getElementById('runBtn').addEventListener('click', runStudio);
+
+  // ---------- dashboard rendering ----------
+  function renderDashboard(){
+    const synth = state.results['synthesis'] || parseSynthesis('');
+    const nonSynthStages = state.stages.filter(s=>s.id!=='synthesis');
+
+    // overall score: prefer synthesis, else average
+    let overall = synth.overallScore;
+    if(overall==null){
+      const scores = nonSynthStages.map(s=> state.results[s.id]?.score).filter(v=>typeof v==='number');
+      overall = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+    }
+    document.getElementById('overallScoreNum').textContent = overall;
+    const circumference = 2*Math.PI*52;
+    const fg = document.getElementById('scoreRingFg');
+    fg.setAttribute('stroke-dasharray', circumference);
+    setTimeout(()=>{
+      fg.style.strokeDashoffset = circumference - (overall/100)*circumference;
+    }, 100);
+    let ringColor = overall>=75 ? 'var(--success)' : overall>=50 ? 'var(--signal)' : 'var(--warm)';
+    fg.style.stroke = ringColor;
+
+    document.getElementById('verdictTitle').textContent = synth.healthVerdict || 'Review complete';
+    document.getElementById('verdictText').textContent = synth.execSummary || 'The panel has completed its review — explore the tabs below for the full breakdown.';
+    document.getElementById('verdictTag').textContent = state.platform + ' · ' + state.goal;
+
+    // category grid from each non-synthesis stage
+    const catGrid = document.getElementById('catGrid');
+    catGrid.innerHTML = '';
+    nonSynthStages.forEach(s=>{
+      const r = state.results[s.id];
+      const score = r?.score ?? 0;
+      const bars = 10;
+      const filled = Math.round((score/100)*bars);
+      let waveHtml = '';
+      for(let i=0;i<bars;i++){
+        const h = 20 + Math.sin(i*0.9)*4 + (i<filled? 10:0);
+        waveHtml += `<i style="height:${Math.max(6,h)}px" class="${i<filled?'filled':''}"></i>`;
+      }
+      const card = document.createElement('div');
+      card.className = 'cat-card';
+      card.innerHTML = `<div class="cat-top"><b>${s.icon} ${s.name}</b><span class="val">${score}</span></div>
+        <div class="wavebar">${waveHtml}</div>`;
+      catGrid.appendChild(card);
+    });
+
+    // findings tab: aggregate strengths/weaknesses/opps
+    fillList('strengthsList', nonSynthStages.flatMap(s=> (state.results[s.id]?.strengths||[])));
+    fillList('weaknessesList', nonSynthStages.flatMap(s=> (state.results[s.id]?.weaknesses||[])));
+    fillList('oppsList', synth.topImprovements.length ? synth.topImprovements : nonSynthStages.flatMap(s=> (state.results[s.id]?.opportunities||[])));
+
+    const reasoningStack = document.getElementById('reasoningStack');
+    reasoningStack.innerHTML = '';
+    nonSynthStages.forEach(s=>{
+      const r = state.results[s.id]; if(!r) return;
+      const block = document.createElement('div');
+      block.className = 'reasoning-block';
+      block.innerHTML = `<b>${s.icon} ${s.name}</b>${escapeHtml(r.analysis)}${r.recommendation? '<br><br><i>→ '+escapeHtml(r.recommendation)+'</i>' : ''}`;
+      reasoningStack.appendChild(block);
+    });
+
+    // rewrite tab
+    document.getElementById('beforeText').textContent = synth.beforeSnippet || '(not provided)';
+    document.getElementById('afterText').textContent = synth.afterRewrite || '(not provided)';
+    const hooksGrid = document.getElementById('hooksGrid');
+    hooksGrid.innerHTML = '';
+    (synth.altHooks.length? synth.altHooks : ['No alternative hooks returned.']).forEach(h=>{
+      const card = document.createElement('div');
+      card.className = 'hook-card';
+      card.innerHTML = `<div class="htext">${escapeHtml(h)}</div><button class="hcopy">copy</button>`;
+      card.querySelector('.hcopy').addEventListener('click', ()=>{
+        navigator.clipboard.writeText(h).then(()=> toast('Copied to clipboard', 'success')).catch(()=> toast('Could not copy', 'error'));
+      });
+      hooksGrid.appendChild(card);
+    });
+
+    // checklist tab
+    const checklistBox = document.getElementById('checklistBox');
+    checklistBox.innerHTML = '';
+    (synth.checklist.length ? synth.checklist : ['No checklist items returned.']).forEach((item,i)=>{
+      const el = document.createElement('div');
+      el.className = 'check-item';
+      el.innerHTML = `<div class="cbox">✓</div><span>${escapeHtml(item)}</span>`;
+      el.addEventListener('click', ()=> el.classList.toggle('checked'));
+      checklistBox.appendChild(el);
+    });
+
+    // performance tab
+    const perfRows = document.getElementById('perfRows');
+    const perfData = [
+      ['Hook Strength', synth.perf.hook],
+      ['Retention Potential', synth.perf.retention],
+      ['Shareability', synth.perf.share],
+      ['SEO / Discoverability', synth.perf.seo]
+    ];
+    perfRows.innerHTML = '';
+    perfData.forEach(([label,val])=>{
+      const v = val==null? 0 : val;
+      const row = document.createElement('div');
+      row.className = 'perf-row';
+      row.innerHTML = `<div class="perf-label">${label}</div><div class="perf-bar"><i style="width:0%"></i></div><div class="perf-val">${val==null?'—':v}</div>`;
+      perfRows.appendChild(row);
+      setTimeout(()=>{ row.querySelector('i').style.width = v+'%'; }, 150);
+    });
+    document.getElementById('perfReasoning').innerHTML = `<b>AI Performance Estimate — Reasoning</b>${escapeHtml(synth.perfReasoning || 'No reasoning returned.')}`;
+
+    // final report tab
+    const reportDoc = document.getElementById('reportDoc');
+    reportDoc.innerHTML = `
+      <h2>${state.contentType==='Other'?state.otherType:state.contentType} — Studio Report</h2>
+      <div class="tc">${state.platform} · Goal: ${state.goal} · Review intensity: ${state.critical}</div>
+      <h3>Executive Summary</h3><p>${escapeHtml(synth.execSummary||'—')}</p>
+      <h3>Health Verdict</h3><p>${escapeHtml(synth.healthVerdict||'—')}</p>
+      <h3>Highest-Impact Improvements</h3><p>${(synth.topImprovements.length?synth.topImprovements:['—']).map(x=>'• '+x).join('\n')}</p>
+      <h3>Predicted Performance Potential (AI estimate)</h3><p>Hook ${synth.perf.hook??'—'} · Retention ${synth.perf.retention??'—'} · Shareability ${synth.perf.share??'—'} · SEO ${synth.perf.seo??'—'}\n${escapeHtml(synth.perfReasoning||'')}</p>
+      <h3>Before vs After</h3><p>BEFORE: ${escapeHtml(synth.beforeSnippet||'—')}\n\nAFTER: ${escapeHtml(synth.afterRewrite||'—')}</p>
+    `;
+    const followupGrid = document.getElementById('followupGrid');
+    followupGrid.innerHTML = '';
+    (synth.deeperPrompts.length? synth.deeperPrompts : []).forEach(p=>{
+      const chip = document.createElement('div');
+      chip.className = 'followup-chip';
+      chip.textContent = p;
+      followupGrid.appendChild(chip);
+    });
+  }
+
+  function fillList(id, items){
+    const ul = document.getElementById(id);
+    ul.innerHTML = '';
+    (items.length? items : ['No items returned by the panel.']).forEach(t=>{
+      const li = document.createElement('li'); li.textContent = t; ul.appendChild(li);
+    });
+  }
+
+  // tabs
+  document.getElementById('tabBar').addEventListener('click', (e)=>{
+    const tab = e.target.closest('.tab'); if(!tab) return;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+
+  document.getElementById('restartBtn').addEventListener('click', ()=>{
+    document.getElementById('dashScreen').classList.add('hidden');
+    document.getElementById('setupScreen').classList.remove('hidden');
+    setStatus('Idle', false);
+  });
+
+})();
+</script>
+</body>
+</html>
